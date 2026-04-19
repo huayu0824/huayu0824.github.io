@@ -1,4 +1,4 @@
-baseURL = "https://huayu0824.github.io/"
+baseURL: "https://huayu0824.github.io/"
 languageCode = 'zh-cn'
 title = '体育前瞻实验室'
 theme = "PaperMod"
@@ -14,7 +14,7 @@ theme = "PaperMod"
         imageWidth = 120
         imageHeight = 120
 
-    # 这里的链接你可以以后改aa
+    # 这里的链接你可以以后改
     [[params.socialIcons]]
         name = "github"
         url = "https://github.com/"
