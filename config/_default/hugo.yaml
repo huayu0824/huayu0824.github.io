@@ -1,15 +1,9 @@
 baseURL: https://huayu0824.github.io/
 languageCode: zh-cn
-title: 华羽的数据实验室
+title: 花羽的数据实验室
 theme: hugo-theme-stack
 
-# 这一段强制 Hugo 输出 HTML
-outputs:
-  home:
-    - HTML
-    - RSS
-
-# 基础菜单
+# --- 菜单配置 ---
 menu:
   main:
     - identifier: home
@@ -17,15 +11,13 @@ menu:
       url: /
       weight: 1
       params:
-        icon: home # 如果你配置了图标库，这里会显示图标
-
+        icon: home
     - identifier: archives
       name: 归档
       url: /archives/
       weight: 2
       params:
         icon: archive
-
     - identifier: search
       name: 搜索
       url: /search/
@@ -33,16 +25,20 @@ menu:
       params:
         icon: search
 
-# 主题必要参数
+# --- 全局参数配置（关键：params 只能出现一次！） ---
 params:
+  main:
+    description: 专注于体育研究与数据分享
+  
   sidebar:
     emoji: ⚽
-    subtitle: 体育研究者 | 数据爱好者
+    subtitle: 体育研究者
     avatar:
       enabled: true
-      local: true
-      src: https://pic1.imgdb.cn/item/69e484c2124e4e0aada14f2c.jpg # 将你的头像放在 static/img/avatar.jpg
-#添加分类，标签小部件
+      local: false # 因为你用的是 URL 链接，这里必须选 false
+      src: "https://pic1.imgdb.cn/item/69e484c2124e4e0aada14f2c.jpg"
+
+  # 侧边栏/首页的小部件配置
   widgets:
     homepage:
       - type: search
