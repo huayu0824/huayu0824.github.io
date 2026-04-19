@@ -1,4 +1,10 @@
 baseURL: https://huayu0824.github.io/
+# ... 其他配置 ...
+# 添加下面这段，防止 Hugo 抓取远程图片失败导致打包中断
+imaging:
+  resampleFilter: Lanczos
+  quality: 75
+
 languageCode: zh-cn
 title: 花羽的数据实验室
 theme: hugo-theme-stack
@@ -33,9 +39,8 @@ params:
   sidebar:
     emoji: ⚽
     subtitle: 体育研究者
-    avatar: 
-      src: "https://pic1.imgdb.cn/item/69e484c2124e4e0aada14f2c.jpg"
-
+    # 直接给 avatar 赋值链接字符串，不要写 src 嵌套，不要写 local/enabled
+    avatar: "https://pic1.imgdb.cn/item/69e484c2124e4e0aada14f2c.jpg" 
 
   # 侧边栏/首页的小部件配置
   widgets:
