@@ -43,7 +43,6 @@ params:
       local: true
       src: https://pic1.imgdb.cn/item/69e484c2124e4e0aada14f2c.jpg # 将你的头像放在 static/img/avatar.jpg
 #添加分类，标签小部件
-params:
   widgets:
     homepage:
       - type: search
