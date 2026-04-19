@@ -1,0 +1,29 @@
+# 侧边栏与部件
+- id: archives
+  translation: "归档"
+- id: categories
+  translation: "分类"
+- id: tags
+  translation: "标签"
+- id: search
+  translation: "搜索"
+
+# 文章详情
+- id: readingTime
+  translation: "阅读时间 %d 分钟"
+- id: wordsCount
+  translation: "%d 字"
+- id: lastUpdated
+  translation: "最后更新于"
+
+# 分页与搜索
+- id: search.placeholder
+  translation: "输入关键词..."
+- id: search.resultsTitle
+  translation: "找到 #count 个结果"
+
+# 404 页面
+- id: notFound.title
+  translation: "页面未找到"
+- id: notFound.subtitle
+  translation: "看来你迷路了。"

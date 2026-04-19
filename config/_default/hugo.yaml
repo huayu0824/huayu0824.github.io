@@ -8,6 +8,8 @@ imaging:
 languageCode: zh-cn
 title: 花羽的数据实验室
 theme: hugo-theme-stack
+languageCode: zh-cn
+defaultContentLanguage: zh-cn
 
 # --- 菜单配置 ---
 menu:
@@ -33,8 +35,8 @@ params:
     description: 专注于体育研究与数据分享
   
   sidebar:
-    emoji: ⚽
-    subtitle: 体育研究者
+    emoji: 🥋
+    subtitle: 体育，照进生命的一束光
     # 直接写链接，不要套任何 src 或 enabled
     avatar: "https://pic1.imgdb.cn/item/69e484c2124e4e0aada14f2c.jpg"
 
