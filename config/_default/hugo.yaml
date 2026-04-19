@@ -1,0 +1,25 @@
+# 基础设置
+baseURL: https://huayu0824.github.io/
+languageCode: zh-cn
+title: 华羽的数据实验室
+theme: hugo-theme-stack
+
+# 菜单设置
+menu:
+  main:
+    - identifier: home
+      name: 首页
+      url: /
+      weight: 1
+    - identifier: archives
+      name: 归档
+      url: /archives/
+      weight: 2
+
+# 主题特定参数
+params:
+  main:
+    description: 专注于体育研究与数据分享
+  sidebar:
+    emoji: ⚽
+    subtitle: 体育研究者
