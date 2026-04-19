@@ -1,7 +1,7 @@
 # 基础设置
 baseURL: https://huayu0824.github.io/
 languageCode: zh-cn
-title: 华羽的数据实验室
+title: 花羽的数据实验室
 theme: hugo-theme-stack
 
 # 菜单设置
