@@ -16,20 +16,16 @@ menu:
       name: 首页
       url: /
       weight: 1
-      params:
-        icon: home
+      # 先不写 params.icon，确保能跑通
     - identifier: archives
       name: 归档
       url: /archives/
       weight: 2
-      params:
-        icon: archive
     - identifier: search
       name: 搜索
       url: /search/
       weight: 3
-      params:
-        icon: search
+
 
 # --- 全局参数配置（关键：params 只能出现一次！） ---
 params:
@@ -39,8 +35,9 @@ params:
   sidebar:
     emoji: ⚽
     subtitle: 体育研究者
-    # 直接给 avatar 赋值链接字符串，不要写 src 嵌套，不要写 local/enabled
-    avatar: "https://pic1.imgdb.cn/item/69e484c2124e4e0aada14f2c.jpg" 
+    # 直接写链接，不要套任何 src 或 enabled
+    avatar: "https://pic1.imgdb.cn/item/69e484c2124e4e0aada14f2c.jpg"
+
 
   # 侧边栏/首页的小部件配置
   widgets:
