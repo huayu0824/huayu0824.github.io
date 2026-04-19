@@ -5,7 +5,6 @@ imaging:
   resampleFilter: Lanczos
   quality: 75
 
-languageCode: zh-cn
 title: 花羽的数据实验室
 theme: hugo-theme-stack
 languageCode: zh-cn
