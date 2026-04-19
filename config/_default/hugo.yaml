@@ -23,3 +23,7 @@ params:
   sidebar:
     emoji: ⚽
     subtitle: 体育研究者
+outputs:
+  home:
+    - HTML
+    - RSS
