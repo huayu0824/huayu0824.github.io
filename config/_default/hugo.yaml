@@ -5,7 +5,7 @@ imaging:
   resampleFilter: Lanczos
   quality: 75
 
-title: 花羽的数据实验室
+title: 花羽
 theme: hugo-theme-stack
 languageCode: zh-cn
 defaultContentLanguage: zh-cn
@@ -37,7 +37,7 @@ params:
     emoji: 🥋
     subtitle: 体育，照进生命的一束光
     # 直接写链接，不要套任何 src 或 enabled
-    avatar: "https://pic1.imgdb.cn/item/69e484c2124e4e0aada14f2c.jpg"
+    avatar: "img/me.jpg"
 
 
   # 侧边栏/首页的小部件配置
