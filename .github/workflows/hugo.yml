@@ -34,9 +34,11 @@ jobs:
 
       - name: Install Hugo CLI
         run: |
-          wget -O ${{ runner.temp }}/hugo.tar.gz https://github.com/gohugoio/hugo/releases/download/v0.123.0/hugo_extended_0.123.0_linux-amd64.tar.gz
+          wget -O ${{ runner.temp }}/hugo.tar.gz https://github.com/gohugoio/hugo/releases/download/v0.148.0/hugo_extended_0.148.0_linux-amd64.tar.gz
           tar -xzf ${{ runner.temp }}/hugo.tar.gz -C ${{ runner.temp }}
           sudo mv ${{ runner.temp }}/hugo /usr/local/bin/hugo
+
+
 
       - name: Build with Hugo
         run: |
