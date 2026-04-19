@@ -33,10 +33,9 @@ params:
   sidebar:
     emoji: ⚽
     subtitle: 体育研究者
-    avatar:
-      enabled: true
-      local: false # 因为你用的是 URL 链接，这里必须选 false
+    avatar: 
       src: "https://pic1.imgdb.cn/item/69e484c2124e4e0aada14f2c.jpg"
+
 
   # 侧边栏/首页的小部件配置
   widgets:
