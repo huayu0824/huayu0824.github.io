@@ -1,4 +1,4 @@
-baseURL = 'https://huayu0824.github.io/'
+baseURL = "https://huayu0824.github.io/"
 languageCode = 'zh-cn'
 title = '体育前瞻实验室'
 theme = "PaperMod"
