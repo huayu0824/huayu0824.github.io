@@ -1,0 +1,62 @@
+    
+[[social]]
+    identifier = "github"
+    name       = "GitHub"
+    url        = "https://github.com/huayu0824"
+
+    [social.params]
+        icon = "brand-github"
+
+[[social]]
+    identifier = "twitter"
+    name       = "Twitter"
+    url        = "https://twitter.com/Blue_Jingling"
+
+    [social.params]
+        icon = "brand-twitter"
+[[social]]
+    identifier = "bilibili"
+    name       = "Blibili"
+    url        = "https://bilibili.com/454659285"
+    [social.params]
+        icon = "brand-bilibili"
+# 这里的 [[main]] 定义的是侧边栏的垂直导航菜单
+[[main]]
+    identifier = "home"
+    name = "主页"
+    url = "/"
+    weight = 1
+    [main.params]
+        icon = "home"
+
+[[main]]
+    identifier = "about"
+    name = "关于"
+    url = "/about/"
+    weight = 4
+    [main.params]
+        icon = "user"
+
+[[main]]
+    identifier = "archives"
+    name = "归档"
+    url = "/archives/"
+    weight = 2
+    [main.params]
+        icon = "archives"
+
+[[main]]
+    identifier = "search"
+    name = "搜索"
+    url = "/search/"
+    weight = 3
+    [main.params]
+        icon = "search"
+
+[[main]]
+    identifier = "links"
+    name = "友链"
+    url = "/links/"
+    weight = 5
+    [main.params]
+        icon = "link"

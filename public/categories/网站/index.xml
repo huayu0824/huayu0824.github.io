@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+    <channel>
+        <title>网站 on 花羽</title>
+        <link>http://localhost:1313/categories/%E7%BD%91%E7%AB%99/</link>
+        <description>Recent content in 网站 on 花羽</description>
+        <generator>Hugo -- gohugo.io</generator>
+        <language>zh-cn</language>
+        <lastBuildDate>Tue, 21 Apr 2026 00:00:00 +0000</lastBuildDate><atom:link href="http://localhost:1313/categories/%E7%BD%91%E7%AB%99/index.xml" rel="self" type="application/rss+xml" /><item>
+            <title>为什么我要建立这个体育笔记</title>
+            <link>http://localhost:1313/p/%E4%B8%BA%E4%BB%80%E4%B9%88%E6%88%91%E8%A6%81%E5%BB%BA%E7%AB%8B%E8%BF%99%E4%B8%AA%E4%BD%93%E8%82%B2%E7%AC%94%E8%AE%B0/</link>
+            <pubDate>Tue, 21 Apr 2026 00:00:00 +0000</pubDate>
+            <guid>http://localhost:1313/p/%E4%B8%BA%E4%BB%80%E4%B9%88%E6%88%91%E8%A6%81%E5%BB%BA%E7%AB%8B%E8%BF%99%E4%B8%AA%E4%BD%93%E8%82%B2%E7%AC%94%E8%AE%B0/</guid>
+            <description>&lt;p&gt;现在网站基于github，由hugo➕stack主题搭建&#xA;通过SyncTrayzor打通了电脑和手机的数据文件共享，通过手机Obsidian编辑文章。&#xA;电脑命令行git三连上传github同步数据&#xA;&lt;strong&gt;git三连&lt;/strong&gt;&lt;/p&gt;&#xA;&#xD;&#xA;    &lt;blockquote&gt;&#xD;&#xA;        &lt;p&gt;git add .&lt;/p&gt;&#xA;&lt;p&gt;git commit -m &amp;ldquo;update blog&amp;rdquo;&lt;/p&gt;&#xA;&lt;p&gt;git push&lt;/p&gt;&#xA;&#xD;&#xA;    &lt;/blockquote&gt;&#xD;&#xA;</description>
+        </item><item>
+            <title>我的第一篇博客</title>
+            <link>http://localhost:1313/p/%E6%88%91%E7%9A%84%E7%AC%AC%E4%B8%80%E7%AF%87%E5%8D%9A%E5%AE%A2/</link>
+            <pubDate>Sat, 18 Apr 2026 00:00:00 +0000</pubDate>
+            <guid>http://localhost:1313/p/%E6%88%91%E7%9A%84%E7%AC%AC%E4%B8%80%E7%AF%87%E5%8D%9A%E5%AE%A2/</guid>
+            <description>&lt;p&gt;Hello World! 终于要成功了！&#xA;这一篇文章准确是发布在2026年4月19日。&#xA;噢耶✌🏻&lt;/p&gt;&#xA;</description>
+        </item></channel>
+</rss>

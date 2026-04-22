@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+    <channel>
+        <title>Blog on 花羽</title>
+        <link>http://localhost:1313/tags/blog/</link>
+        <description>Recent content in Blog on 花羽</description>
+        <generator>Hugo -- gohugo.io</generator>
+        <language>zh-cn</language>
+        <lastBuildDate>Tue, 21 Apr 2026 00:00:00 +0000</lastBuildDate><atom:link href="http://localhost:1313/tags/blog/index.xml" rel="self" type="application/rss+xml" /><item>
+            <title>为什么我要建立这个体育笔记</title>
+            <link>http://localhost:1313/p/%E4%B8%BA%E4%BB%80%E4%B9%88%E6%88%91%E8%A6%81%E5%BB%BA%E7%AB%8B%E8%BF%99%E4%B8%AA%E4%BD%93%E8%82%B2%E7%AC%94%E8%AE%B0/</link>
+            <pubDate>Tue, 21 Apr 2026 00:00:00 +0000</pubDate>
+            <guid>http://localhost:1313/p/%E4%B8%BA%E4%BB%80%E4%B9%88%E6%88%91%E8%A6%81%E5%BB%BA%E7%AB%8B%E8%BF%99%E4%B8%AA%E4%BD%93%E8%82%B2%E7%AC%94%E8%AE%B0/</guid>
+            <description>&lt;p&gt;现在网站基于github，由hugo➕stack主题搭建&#xA;通过&lt;/p&gt;&#xA;</description>
+        </item></channel>
+</rss>

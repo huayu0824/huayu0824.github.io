@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+    <channel>
+        <title>科技 on 花羽</title>
+        <link>http://localhost:1313/tags/%E7%A7%91%E6%8A%80/</link>
+        <description>Recent content in 科技 on 花羽</description>
+        <generator>Hugo -- gohugo.io</generator>
+        <language>zh-cn</language>
+        <lastBuildDate>Sat, 18 Apr 2026 00:00:00 +0000</lastBuildDate><atom:link href="http://localhost:1313/tags/%E7%A7%91%E6%8A%80/index.xml" rel="self" type="application/rss+xml" /><item>
+            <title>我的第一篇博客</title>
+            <link>http://localhost:1313/p/%E6%88%91%E7%9A%84%E7%AC%AC%E4%B8%80%E7%AF%87%E5%8D%9A%E5%AE%A2/</link>
+            <pubDate>Sat, 18 Apr 2026 00:00:00 +0000</pubDate>
+            <guid>http://localhost:1313/p/%E6%88%91%E7%9A%84%E7%AC%AC%E4%B8%80%E7%AF%87%E5%8D%9A%E5%AE%A2/</guid>
+            <description>&lt;p&gt;Hello World! 终于要成功了！&#xA;这一篇文章准确是发布在2026年4月19日。&#xA;噢耶✌🏻&lt;/p&gt;&#xA;</description>
+        </item></channel>
+</rss>

@@ -1,0 +1,49 @@
+mainSections   = ["post"]
+rssFullContent = true
+favicon        = "/favicon.ico"
+
+
+[footer]
+    since = 2026
+    customText = "花羽的体育笔记" # 这里可以加你的版权文字
+
+
+[sidebar]
+    emoji = "🥋"
+    subtitle = "体育，照进生命的一束光"
+    avatar = "img/avatar.png" # 确保图片放在 static/img/avatar.png
+    bio = "专注于体育研究与数据分享" # 增加一行自我介绍
+
+[article]
+    license = { enabled = true, default = "Licensed under [CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/)" }
+    readingTime = true # 建议开启，显示阅读时长
+    wordCount = true    # 开启字数统计
+    breadcrumbs = true # 确保这一项是 true
+    enable = false #底部的licensed字条
+
+
+[widgets]
+    homepage = [
+        { type = "search" },
+        { type = "archives", params = { limit = 5 } },
+        { type = "categories", params = { limit = 10 } },
+        { type = "tag-cloud", params = { limit = 10 } }
+    ]
+    page = [
+        { type = "toc" } # 文章页显示目录
+    ]
+
+
+[comments]
+    # See complete configuration in config/_default/params.toml
+    enabled  = false
+    provider = "disqus"
+
+# GDPR Cookie Consent Configuration
+# When enabled, analytics and functional cookies require user consent
+[cookies]
+    enabled = false
+
+    [cookies.categories]
+        analytics  = true
+        functional = true
