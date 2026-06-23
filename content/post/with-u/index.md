@@ -1,5 +1,6 @@
 ---
 title: "WITH-U：我把另一个自己写进了代码里"
+slug: "with-u"
 date: 2026-06-23
 draft: false
 categories:
