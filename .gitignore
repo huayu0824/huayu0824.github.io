@@ -1,1 +1,14 @@
-hugo.exe 
+# Hugo 构建产物（GitHub Actions 会自行构建，不需要入库）
+/public/
+/resources/
+.hugo_build.lock
+
+# 本地 Hugo 可执行文件
+hugo.exe
+
+# Syncthing 回收站
+.trash/
+
+# 系统垃圾文件
+Thumbs.db
+Desktop.ini

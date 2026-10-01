@@ -10,16 +10,15 @@ favicon        = "/favicon.ico"
 
 [sidebar]
     emoji = "🥋"
-    subtitle = "体育，照进生命的一束光"
+    # 注意：主题只渲染 subtitle，bio 参数不存在，写了也不会显示
+    subtitle = "学体育的，现在主要在做硬件和 AI"
     avatar = "img/avatar.png" # 确保图片放在 static/img/avatar.png
-    bio = "专注于体育研究与数据分享" # 增加一行自我介绍
 
 [article]
     license = { enabled = true, default = "Licensed under [CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/)" }
     readingTime = true # 建议开启，显示阅读时长
     wordCount = true    # 开启字数统计
     breadcrumbs = true # 确保这一项是 true
-    enable = false #底部的licensed字条
 
 
 [widgets]

@@ -16,7 +16,7 @@
         icon = "brand-twitter"
 [[social]]
     identifier = "bilibili"
-    name       = "Blibili"
+    name       = "Bilibili"
     url        = "https://bilibili.com/454659285"
     [social.params]
         icon = "brand-bilibili"

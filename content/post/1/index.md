@@ -1,12 +1,15 @@
 ---
 title: 为什么我要建立这个体育笔记
+slug: "why-this-blog"
+# 保留旧的中文 URL，避免历史链接失效
+aliases:
+  - /p/为什么我要建立这个体育笔记/
 date: 2026-04-21
 draft: false
 categories:
   - 网站
 tags:
   - Blog
-image: cover.jpg
 description: 这是我通过手机发布的第一篇文章
 ---
 现在网站基于github，由hugo➕stack主题搭建

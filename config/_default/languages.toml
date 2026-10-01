@@ -3,5 +3,7 @@
     title        = "花羽"
     weight       = 2
 
+    # 注意：语言级 params 会覆盖 config/_default/params.toml 里的同名值，
+    # 改侧栏副标题要同时改这里，否则不生效。
     [zh.params.sidebar]
-        subtitle = "体育，照进生命的一束光"
+        subtitle = "学体育的，现在主要在做硬件和 AI"

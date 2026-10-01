@@ -1,6 +1,6 @@
 baseURL                = "https://huayu0824.github.io/"
 languageCode           = "zh-cn"
-title                  = "Hugo Theme Stack"
+title                  = "花羽的体育笔记"
 # Theme i18n support
 # See i18n folder for available languages
 defaultContentLanguage = "zh"
@@ -17,5 +17,7 @@ theme = "hugo-theme-stack"
     post = "/p/:slug/"
     page = "/:slug/"
 
+# 评论默认关闭（见 params.toml 的 comments.enabled）
+# 若要启用 Disqus，务必把 shortname 换成你自己的 Disqus 论坛名，否则会指向主题作者的站点
 [services.disqus]
-    shortname = "hugo-theme-stack"
+    shortname = ""

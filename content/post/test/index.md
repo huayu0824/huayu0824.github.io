@@ -1,5 +1,9 @@
 ---
 title: 我的第一篇博客
+slug: "first-post"
+# 保留旧的中文 URL，避免历史链接失效
+aliases:
+  - /p/我的第一篇博客/
 date: 2026-04-18
 draft: false
 categories:
