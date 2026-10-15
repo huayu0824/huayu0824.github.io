@@ -1,5 +1,8 @@
 /**
- * GitHub REST API 封装。只用到 Contents API 那几个写文件的接口。
+ * GitHub REST API 封装。
+ *
+ * 列表场景用 git/trees（一次请求拿全仓库路径），读写单文件用 Contents API
+ * （读写都顺带返回 sha，便于做乐观锁）。
  */
 
 const API = "https://api.github.com";
@@ -35,6 +38,7 @@ async function gh(path, token, init = {}) {
     }
 
     if (!res.ok) {
+        // 截断 GitHub 的报错正文，避免把整段 HTML 带进日志
         const msg = (data && data.message) || `GitHub 返回 ${res.status}`;
         throw new GitHubError(msg, res.status);
     }
@@ -55,12 +59,19 @@ function fromBase64(b64) {
     return new TextDecoder().decode(bytes);
 }
 
-/** 列出目录内容（只取一级） */
-export function listDir(path, token) {
-    return gh(`/repos/${repoPath()}/contents/${encodePath(path)}`, token);
+/* ------------------------------------------------------------------ 读 */
+
+/** 全仓库文件路径（一次请求）。仓库很大时可能被截断，此时 truncated=true */
+export async function listTree(token) {
+    const branch = encodeURIComponent(env("GITHUB_BRANCH"));
+    const data = await gh(`/repos/${repoPath()}/git/trees/${branch}?recursive=1`, token);
+    return {
+        truncated: data.truncated === true,
+        entries: Array.isArray(data.tree) ? data.tree : [],
+    };
 }
 
-/** 读文件；不存在时返回 null */
+/** 读单个文件；不存在返回 null */
 export async function getFile(path, token) {
     try {
         const data = await gh(`/repos/${repoPath()}/contents/${encodePath(path)}`, token);
@@ -76,7 +87,8 @@ export async function getFile(path, token) {
     }
 }
 
-/** 新建或更新文件。传了 sha 就是更新，不传就是新建。 */
+/* ------------------------------------------------------------------ 写 */
+
 export function putFile(path, text, token, { sha, message }) {
     return gh(`/repos/${repoPath()}/contents/${encodePath(path)}`, token, {
         method: "PUT",
@@ -90,7 +102,7 @@ export function putFile(path, text, token, { sha, message }) {
     });
 }
 
-/** 写入二进制内容（图片上传）。content 已是 base64。 */
+/** 写二进制（图片）。content 已是 base64。 */
 export function putBinaryFile(path, base64, token, { message }) {
     return gh(`/repos/${repoPath()}/contents/${encodePath(path)}`, token, {
         method: "PUT",
@@ -107,13 +119,28 @@ export function deleteFile(path, token, { sha, message }) {
     return gh(`/repos/${repoPath()}/contents/${encodePath(path)}`, token, {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-            message,
-            sha,
-            branch: env("GITHUB_BRANCH"),
-        }),
+        body: JSON.stringify({ message, sha, branch: env("GITHUB_BRANCH") }),
     });
 }
+
+/** 删整个目录：逐个删文件，GitHub Contents API 没有删目录的接口 */
+export async function deleteDir(dirPath, token, message) {
+    const entries = await gh(`/repos/${repoPath()}/contents/${encodePath(dirPath)}`, token);
+    if (!Array.isArray(entries)) return 0;
+
+    let removed = 0;
+    for (const entry of entries) {
+        if (entry.type === "dir") {
+            removed += await deleteDir(`${dirPath}/${entry.name}`, token, message);
+        } else {
+            await deleteFile(entry.path, token, { sha: entry.sha, message });
+            removed++;
+        }
+    }
+    return removed;
+}
+
+/* ------------------------------------------------------------------ 其它 */
 
 export function getUser(token) {
     return gh("/user", token);
@@ -123,7 +150,7 @@ function repoPath() {
     return `${env("GITHUB_OWNER")}/${env("GITHUB_REPO")}`;
 }
 
-/** 路径里的斜杠不能整体编码，GitHub Contents API 要求分段编码 */
+/** 路径里的斜杠不能整体编码，Contents API 要求分段编码 */
 function encodePath(path) {
     return String(path)
         .split("/")
@@ -131,12 +158,9 @@ function encodePath(path) {
         .join("/");
 }
 
-/** 统一的 env 读取，避免各处重复写 env.X */
 function env(key) {
     const value = globalThis.__env?.[key];
-    if (value === undefined || value === "") {
-        throw new Error(`缺少环境变量 ${key}`);
-    }
+    if (value === undefined || value === "") throw new Error(`缺少环境变量 ${key}`);
     return value;
 }
 
@@ -144,18 +168,16 @@ export function optionalEnv(key) {
     return globalThis.__env?.[key] || "";
 }
 
-/** 并发受限的 map，避免一次拉几十个文件把子请求配额打爆 */
+/** 并发受限的 map，避免一次打太多子请求 */
 export async function mapLimit(items, limit, fn) {
     const results = new Array(items.length);
     let cursor = 0;
-
     const workers = Array.from({ length: Math.min(limit, items.length) }, async () => {
         while (cursor < items.length) {
             const i = cursor++;
             results[i] = await fn(items[i], i);
         }
     });
-
     await Promise.all(workers);
     return results;
 }

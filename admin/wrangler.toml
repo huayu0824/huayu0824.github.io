@@ -8,18 +8,25 @@ compatibility_date = "2025-01-01"
 directory = "./public"
 binding = "ASSETS"
 
-# ---- 非敏感配置：可以直接改这里 ----
+# ---- 非敏感配置：可以直接改这里，改完重新 deploy 即可 ----
 [vars]
-GITHUB_OWNER    = "huayu0824"
-GITHUB_REPO     = "huayu0824.github.io"
-GITHUB_BRANCH   = "main"
-CONTENT_DIR     = "content/post"
-UPLOAD_DIR      = "static/uploads"
-# 允许登录的 GitHub 用户名（逗号分隔）。留空表示任何能通过 GitHub 授权的人都可以进。
-# 强烈建议填上你的用户名，例如 "huayu0824"
-ALLOWED_LOGINS  = ""
+GITHUB_OWNER   = "huayu0824"
+GITHUB_REPO    = "huayu0824.github.io"
+GITHUB_BRANCH  = "main"
+CONTENT_DIR    = "content/posts"
+UPLOAD_DIR     = "content/uploads"
+# 只允许这些 GitHub 账号登录后台。务必填你自己的用户名，否则任何能登录 GitHub 的人都能写你的博客。
+ALLOWED_LOGINS = "huayu0824"
+# 新文章的默认作者
+DEFAULT_AUTHOR = "花羽"
+# GitHub OAuth 的授权范围。仓库是公开的用 public_repo 即可；若以后把仓库改成私有，改成 repo。
+GITHUB_SCOPE   = "public_repo"
 
 # ---- 敏感配置：用 wrangler secret put 设置，不要写进本文件 ----
 #   GITHUB_CLIENT_ID     GitHub OAuth App 的 Client ID
 #   GITHUB_CLIENT_SECRET GitHub OAuth App 的 Client Secret
 #   SESSION_SECRET       任意长随机串，用于签名会话
+#
+#   npx wrangler secret put GITHUB_CLIENT_ID
+#   npx wrangler secret put GITHUB_CLIENT_SECRET
+#   npx wrangler secret put SESSION_SECRET

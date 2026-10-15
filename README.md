@@ -95,9 +95,9 @@ bun run new-flow      # 新建一条 Flow
 
 ## 后台
 
-`admin/` 是一个独立的 Cloudflare Worker，提供 GitHub 登录的写作后台，保存文章即向仓库提交 commit，触发自动部署。
+`admin/` 是一个独立的 Cloudflare Worker，提供 GitHub 登录的写作后台，文章和随笔都能写，保存即向仓库提交 commit 触发自动部署。
 
-详见 `admin/README.md`。
+部署步骤见 [`admin/README.md`](admin/README.md)。不需要服务器。
 
 ---
 

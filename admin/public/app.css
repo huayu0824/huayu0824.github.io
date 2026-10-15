@@ -1,5 +1,5 @@
 /* ==========================================================================
-   博客后台样式 —— 沿用站点设计语言（暖纸底 / 衬线标题 / 青绿强调色）
+   博客后台样式 —— 与站点同一套设计语言（暖纸底 / 衬线标题 / 青绿强调）
    ========================================================================== */
 
 :root {
@@ -47,6 +47,9 @@ body {
 
 [hidden] { display: none !important; }
 
+.link { color: var(--muted); font-size: 13.5px; text-decoration: none; }
+.link:hover { color: var(--accent); }
+
 /* -------------------------------------------------------------------- 按钮 */
 
 .btn-primary {
@@ -84,6 +87,7 @@ body {
 }
 
 .btn-ghost:hover { border-color: var(--accent); color: var(--accent); }
+.btn-ghost.block { width: 100%; }
 
 .btn-danger {
     padding: 8px 16px;
@@ -110,8 +114,32 @@ body {
 
 .btn-link:hover { color: var(--accent); }
 
-.link { color: var(--muted); font-size: 13.5px; text-decoration: none; }
-.link:hover { color: var(--accent); }
+.icon-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    padding: 0;
+    border: 0;
+    border-radius: 8px;
+    background: transparent;
+    color: var(--muted);
+    cursor: pointer;
+    transition: background .18s ease, color .18s ease;
+}
+
+.icon-btn:hover { background: var(--accent-soft); color: var(--accent); }
+
+.icon-btn svg {
+    width: 17px;
+    height: 17px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.7;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
 
 /* ---------------------------------------------------------------- 登录卡片 */
 
@@ -124,7 +152,7 @@ body {
 }
 
 .gate-card {
-    max-width: 420px;
+    max-width: 430px;
     padding: 44px 40px;
     background: var(--panel);
     border: 1px solid var(--border);
@@ -132,17 +160,11 @@ body {
     text-align: center;
 }
 
-.gate-card h1 {
-    margin: 0;
-    font-family: var(--serif);
-    font-size: 30px;
-    font-weight: 700;
-}
-
+.gate-card h1 { margin: 0; font-family: var(--serif); font-size: 30px; font-weight: 700; }
 .gate-sub { margin: 14px 0 26px; color: var(--muted); font-size: 14px; line-height: 1.8; }
 .gate-hint { margin: 16px 0 0; color: var(--danger); font-size: 13px; }
 
-/* ------------------------------------------------------------------ 顶栏 */
+/* -------------------------------------------------------------------- 顶栏 */
 
 .topbar {
     display: flex;
@@ -157,16 +179,15 @@ body {
 .topbar-left { display: flex; align-items: baseline; gap: 12px; min-width: 0; }
 .topbar-left strong { font-family: var(--serif); font-size: 17px; }
 .repo { color: var(--faint); font-family: var(--mono); font-size: 12px; }
-
-.topbar-right { display: flex; align-items: center; gap: 16px; }
+.topbar-right { display: flex; align-items: center; gap: 14px; }
 .avatar { width: 26px; height: 26px; border-radius: 50%; }
 .who { font-size: 13.5px; color: var(--muted); }
 
-/* ------------------------------------------------------------------ 布局 */
+/* -------------------------------------------------------------------- 布局 */
 
 .body {
     display: grid;
-    grid-template-columns: 320px minmax(0, 1fr);
+    grid-template-columns: 330px minmax(0, 1fr);
     height: calc(100vh - 51px);
 }
 
@@ -174,9 +195,39 @@ body {
     display: flex;
     flex-direction: column;
     gap: 12px;
-    padding: 20px;
+    padding: 18px;
     border-right: 1px solid var(--border);
     overflow: hidden;
+}
+
+/* -------------------------------------------------------------------- 标签页 */
+
+.tabs {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 4px;
+    padding: 4px;
+    border-radius: 12px;
+    background: var(--border-soft);
+}
+
+.tab {
+    padding: 7px 0;
+    border: 0;
+    border-radius: 9px;
+    background: transparent;
+    color: var(--muted);
+    font-family: inherit;
+    font-size: 13.5px;
+    cursor: pointer;
+    transition: background .18s ease, color .18s ease;
+}
+
+.tab.is-active {
+    background: var(--panel);
+    color: var(--accent);
+    font-weight: 600;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, .06);
 }
 
 .filter {
@@ -195,14 +246,15 @@ body {
 .list { flex: 1; overflow-y: auto; margin: 0 -8px; padding: 0 8px; }
 
 .empty { margin: 20px 0; text-align: center; color: var(--faint); font-size: 13.5px; }
+.list-more { padding-top: 8px; }
 
-/* -------------------------------------------------------------- 文章条目 */
+/* -------------------------------------------------------------- 列表条目 */
 
 .item {
     display: block;
     width: 100%;
-    padding: 12px 14px;
-    margin-bottom: 6px;
+    padding: 11px 14px;
+    margin-bottom: 5px;
     border: 1px solid transparent;
     border-radius: 10px;
     background: transparent;
@@ -215,10 +267,7 @@ body {
 
 .item:hover { background: var(--panel); }
 
-.item.is-active {
-    background: var(--panel);
-    border-color: var(--accent);
-}
+.item.is-active { background: var(--panel); border-color: var(--accent); }
 
 .item-title {
     display: block;
@@ -234,8 +283,8 @@ body {
 .item-meta {
     display: flex;
     align-items: center;
-    gap: 8px;
-    margin-top: 4px;
+    gap: 7px;
+    margin-top: 3px;
     font-family: var(--mono);
     font-size: 11.5px;
     color: var(--faint);
@@ -250,9 +299,9 @@ body {
     font-size: 11px;
 }
 
-/* ---------------------------------------------------------------- 编辑区 */
+/* ------------------------------------------------------------------ 编辑区 */
 
-.editor { overflow-y: auto; padding: 28px 34px 60px; }
+.editor { overflow-y: auto; padding: 26px 32px 60px; }
 
 .editor-empty {
     display: flex;
@@ -276,17 +325,17 @@ body {
     background: transparent;
     color: var(--text);
     font-family: var(--serif);
-    font-size: 28px;
+    font-size: 27px;
     font-weight: 700;
     outline: none;
 }
 
 .editor-actions { display: flex; align-items: center; gap: 12px; flex: none; }
 
-.draft-toggle {
+.check {
     display: inline-flex;
     align-items: center;
-    gap: 6px;
+    gap: 5px;
     color: var(--muted);
     font-size: 13.5px;
     cursor: pointer;
@@ -294,9 +343,8 @@ body {
 
 .meta-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
     gap: 12px;
-    margin-bottom: 14px;
 }
 
 .field { display: block; margin-bottom: 14px; }
@@ -328,7 +376,7 @@ body {
 .cover-row { display: flex; gap: 8px; }
 .cover-row input { flex: 1; }
 
-/* --------------------------------------------------------- 正文与预览 */
+/* ------------------------------------------------------------ 正文与预览 */
 
 .editor-main {
     display: grid;
@@ -339,8 +387,6 @@ body {
 
 .editor-main.is-preview-only { grid-template-columns: 1fr; }
 .editor-main.is-preview-only .pane:first-child { display: none; }
-.editor-main.is-edit-only { grid-template-columns: 1fr; }
-.editor-main.is-edit-only .pane:last-child { display: none; }
 
 .pane {
     display: flex;
@@ -384,20 +430,20 @@ body {
     overflow-y: auto;
 }
 
-/* ------------------------------------------------------------------ 页脚 */
+/* -------------------------------------------------------------------- 页脚 */
 
 .editor-foot {
     display: flex;
     align-items: center;
     gap: 16px;
-    margin-top: 22px;
-    padding-top: 18px;
+    margin-top: 20px;
+    padding-top: 16px;
     border-top: 1px solid var(--border-soft);
 }
 
 .save-state { flex: 1; color: var(--faint); font-size: 13px; }
 
-/* ------------------------------------------------------------ 预览排版 */
+/* ---------------------------------------------------------------- 预览排版 */
 
 .prose { font-size: 15.5px; line-height: 1.9; overflow-wrap: break-word; }
 .prose > *:first-child { margin-top: 0; }
@@ -407,7 +453,6 @@ body {
 .prose h1 { font-size: 1.6em; }
 .prose h2 { font-size: 1.38em; }
 .prose h3 { font-size: 1.16em; }
-.prose h4 { font-size: 1.04em; }
 .prose a { color: var(--accent); }
 .prose ul, .prose ol { margin: 0 0 1em; padding-left: 1.5em; }
 .prose li { margin-bottom: .3em; }
@@ -436,7 +481,7 @@ body {
 .prose th { background: var(--border-soft); font-weight: 600; }
 .prose mark { background: var(--accent-soft); color: var(--accent); border-radius: 3px; }
 
-/* ------------------------------------------------------------------ 提示 */
+/* -------------------------------------------------------------------- 提示 */
 
 .toast {
     position: fixed;
@@ -455,7 +500,7 @@ body {
 
 .toast.is-error { background: var(--danger); color: #fff; }
 
-/* ---------------------------------------------------------------- 响应式 */
+/* -------------------------------------------------------------------- 响应式 */
 
 @media (max-width: 1080px) {
     .editor-main { grid-template-columns: 1fr; }
@@ -463,9 +508,9 @@ body {
 
 @media (max-width: 860px) {
     .body { grid-template-columns: 1fr; height: auto; }
-    .sidebar { border-right: 0; border-bottom: 1px solid var(--border); max-height: 46vh; }
-    .editor { padding: 20px 18px 50px; }
+    .sidebar { border-right: 0; border-bottom: 1px solid var(--border); max-height: 48vh; }
+    .editor { padding: 18px 16px 48px; }
     .topbar { flex-wrap: wrap; }
     .editor-head { flex-wrap: wrap; }
-    .title-input { font-size: 23px; }
+    .title-input { font-size: 22px; }
 }
