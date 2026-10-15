@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:content="http://purl.org/rss/modules/content/">
+  <channel>
+    <title><![CDATA[花羽的体育笔记]]></title>
+    <link>https://huayu0824.github.io</link>
+    <description><![CDATA[学体育的，现在主要在做硬件和 AI。记录身体、流动与时间，也记录那些我拆开又装回去的东西。]]></description>
+    <language>zh</language>
+    <lastBuildDate>Thu, 15 Oct 2026 10:14:25 GMT</lastBuildDate>
+    <atom:link href="https://huayu0824.github.io/flows/feed.xml" rel="self" type="application/rss+xml" />
+    <image>
+      <url>https://huayu0824.github.io/og-image.png</url>
+      <title>花羽的体育笔记</title>
+      <link>https://huayu0824.github.io</link>
+    </image>
+    
+  </channel>
+</rss>

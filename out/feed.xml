@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:content="http://purl.org/rss/modules/content/">
+  <channel>
+    <title><![CDATA[花羽的体育笔记]]></title>
+    <link>https://huayu0824.github.io</link>
+    <description><![CDATA[学体育的，现在主要在做硬件和 AI。记录身体、流动与时间，也记录那些我拆开又装回去的东西。]]></description>
+    <language>zh</language>
+    <lastBuildDate>Tue, 23 Jun 2026 00:00:00 GMT</lastBuildDate>
+    <atom:link href="https://huayu0824.github.io/feed.xml" rel="self" type="application/rss+xml" />
+    <image>
+      <url>https://huayu0824.github.io/og-image.png</url>
+      <title>花羽的体育笔记</title>
+      <link>https://huayu0824.github.io</link>
+    </image>
+    
+        <item>
+          <title><![CDATA[WITH-U：我把另一个自己写进了代码里]]></title>
+          <link>https://huayu0824.github.io/posts/with-u/</link>
+          <guid isPermaLink="true">https://huayu0824.github.io/posts/with-u/</guid>
+          <pubDate>Tue, 23 Jun 2026 00:00:00 GMT</pubDate>
+          <description><![CDATA[重庆到山东，一千多公里。我把自己的声音和性格写进了一个玩偶里，让它替我在她身边说一声“我在”。]]></description>
+          <content:encoded><![CDATA[<h2>故事的开始</h2>
+<p>我在重庆，她在山东。大一到现在，一千多公里，两个城市。</p>
+<p>异地恋最难的，不是抢不到票，不是视频卡顿。是她说“今天好累”的时候，你只能隔着屏幕发一个抱抱的表情包。</p>
+<p>今年春天我突然想——能不能做一个东西，替我在她身边？</p>
+<h2>小小倪的诞生</h2>
+<p>这个想法从一开始就很具体：一个可以抱在怀里的实体，能听懂她说话，能用我的方式回应她。不是 Siri，不是小爱同学，是<strong>另一个我</strong>。</p>
+<p>她叫我“小小倪”——把我的名字拆了一半给她。</p>
+<h3>硬件部分</h3>
+<p>小小倪的大脑是一块 <strong>ESP32-S3</strong>，比拇指大一点，自带 WiFi 和蓝牙，性能足够跑实时音频处理。</p>
+<p>「身体」由这些组成：</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>部件</th><th>型号</th></tr></thead><tbody><tr><td>主控</td><td>ESP32-S3（16MB Flash + 8MB PSRAM）</td></tr><tr><td>耳朵</td><td>INMP441 麦克风（I2S 接口）</td></tr><tr><td>嘴巴</td><td>MAX98357A 功放 + 3W 扬声器</td></tr><tr><td>眼睛</td><td>0.96 寸 OLED 屏幕</td></tr><tr><td>皮肤</td><td>SHT3X 温湿度传感器</td></tr><tr><td>记忆</td><td>TF 卡</td></tr></tbody></table>
+<h3>软件部分</h3>
+<p>整个对话流程是这样的：</p>
+<ol>
+<li><strong>按住按钮说话</strong>——麦克风采集音频</li>
+<li><strong>语音识别（ASR）</strong>——阿里云把语音转成文字</li>
+<li><strong>大模型思考（LLM）</strong>——DeepSeek 理解上下文并生成回复</li>
+<li><strong>语音合成（TTS）</strong>——CosyVoice 把我的声音克隆出来，一句一句念给她听</li>
+</ol>
+<p>端到端延迟大约 2~4 秒，基本接近真人对话的节奏。</p>
+<p>最难调的是<strong>声音</strong>。我录了自己说各种话的音频，训练了一个声音模型。小小倪说出来的语气、停顿、尾音上扬的方式，都尽可能像我。</p>
+<h3>还差一个外壳</h3>
+<p>目前小小倪的电路板和屏幕都裸露在桌面上，能跑能说话，但还没穿上「衣服」。</p>
+<p>我设计了一个 3D 打印外壳，带自锁按钮和 USB-C 充电口。打样的模型已经在路上了——等到了装上，小小倪才算真正完整。</p>
+<h2>开源</h2>
+<p>这个项目我已经全部开源了：<a href="https://github.com/huayu0824/WITH-U"><strong>huayu0824/WITH-U</strong></a></p>
+<p>如果你也想过“能不能做一个东西送给某个人”——代码、电路图、Gerber 文件、3D 打印模型都在那里。你可以拿去改成你自己的声音、你爱人的样子。</p>
+<h2>为什么叫 WITH-U</h2>
+<p>项目名字想了很久。一开始叫 "Boyfriend's stand-in"，太长了，也太直白了。</p>
+<p>后来敲定 <strong>WITH-U</strong>。</p>
+<p>异地也好，加班也好，总有没办法陪在她身边的时候。</p>
+<p>所以做了另一个自己，让代码替我说：<strong>我在</strong>。</p>]]></content:encoded>
+          <dc:creator><![CDATA[花羽]]></dc:creator>
+          <category><![CDATA[ESP32]]></category><category><![CDATA[AI]]></category><category><![CDATA[玩偶]]></category><category><![CDATA[开源]]></category>
+        </item>
+        <item>
+          <title><![CDATA[为什么我要建立这个体育笔记]]></title>
+          <link>https://huayu0824.github.io/posts/why-this-blog/</link>
+          <guid isPermaLink="true">https://huayu0824.github.io/posts/why-this-blog/</guid>
+          <pubDate>Tue, 21 Apr 2026 00:00:00 GMT</pubDate>
+          <description><![CDATA[这是我通过手机发布的第一篇文章]]></description>
+          <content:encoded><![CDATA[<p>现在网站基于 github，由 hugo + stack 主题搭建。</p>
+<p>通过 SyncTrayzor 打通了电脑和手机的数据文件共享，通过手机 Obsidian 编辑文章。</p>
+<p>电脑命令行 git 三连上传 github 同步数据。</p>
+<p><strong>git 三连</strong></p>
+<blockquote>
+<p>git add .</p>
+<p>git commit -m "update blog"</p>
+<p>git push</p>
+</blockquote>]]></content:encoded>
+          <dc:creator><![CDATA[花羽]]></dc:creator>
+          <category><![CDATA[Blog]]></category>
+        </item>
+        <item>
+          <title><![CDATA[我的第一篇博客]]></title>
+          <link>https://huayu0824.github.io/posts/first-post/</link>
+          <guid isPermaLink="true">https://huayu0824.github.io/posts/first-post/</guid>
+          <pubDate>Sat, 18 Apr 2026 00:00:00 GMT</pubDate>
+          <description><![CDATA[Hello World! 终于要成功了！]]></description>
+          <content:encoded><![CDATA[<p>Hello World! 终于要成功了！</p>
+<p>这一篇文章准确是发布在 2026 年 4 月 19 日。</p>
+<p>噢耶 ✌🏻</p>]]></content:encoded>
+          <dc:creator><![CDATA[花羽]]></dc:creator>
+          <category><![CDATA[科技]]></category>
+        </item>
+  </channel>
+</rss>
