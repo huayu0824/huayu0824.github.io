@@ -523,7 +523,7 @@
                     items.push(lines[i]);
                     i++;
                 }
-                out += renderList(items);
+                out += renderMdList(items);
                 continue;
             }
 
@@ -552,6 +552,7 @@
     }
 
     function renderTable(rows) {
+        if (!rows || rows.length < 2) return "";
         var head = splitRow(rows[0]);
         var body = rows.slice(2).map(splitRow);
         var html = "<table><thead><tr>";
@@ -565,7 +566,9 @@
         return html + "</tbody></table>";
     }
 
-    function renderList(lines) {
+    /** Markdown 列表渲染。注意别和左侧栏的 renderList() 同名，后者会被覆盖 */
+    function renderMdList(lines) {
+        if (!lines || !lines.length) return "";
         var ordered = /^\s*\d+[.)]\s+/.test(lines[0]);
         var html = ordered ? "<ol>" : "<ul>";
         var open = false;
