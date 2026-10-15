@@ -1,0 +1,124 @@
+{{ define "main" }}
+    {{- $isPost := in .Site.Params.mainSections .Section -}}
+
+    {{- if $isPost -}}
+        {{- $cover := partial "helper/image" (dict "Image" .Params.image "Resources" .Resources "Context" .) -}}
+        {{- $toc := partial "article/components/toc" . -}}
+        {{- $hasToc := and (ne (.Params.toc | default true) false) (ge (len $toc) 60) -}}
+
+        <article class="sd-article{{ if $hasToc }} has-toc{{ end }}">
+            <header class="sd-article-head">
+                <a class="sd-back" href="{{ "/" | relLangURL }}">← 返回</a>
+                <h1>{{ .Title }}</h1>
+
+                <div class="sd-article-meta">
+                    {{- if not .Date.IsZero -}}
+                        <time datetime="{{ .Date.Format "2006-01-02" }}">{{ .Date.Format "2006-01-02" }}</time>
+                        <i></i>
+                    {{- end -}}
+                    <span>{{ .ReadingTime }} 分钟阅读</span>
+                    {{- if .WordCount -}}
+                        <i></i><span>约 {{ .WordCount }} 字</span>
+                    {{- end -}}
+                    {{- if .Draft }}<em class="sd-badge">草稿</em>{{ end -}}
+                </div>
+
+                {{- with .Description }}
+                    <p class="sd-article-desc">{{ . }}</p>
+                {{- end -}}
+            </header>
+
+            {{- with $cover }}
+                <figure class="sd-article-cover">
+                    <img src="{{ .Permalink }}" alt="{{ $.Title }}">
+                </figure>
+            {{- end -}}
+
+            <div class="sd-article-body">
+                {{- if $hasToc -}}
+                    <aside class="sd-toc">
+                        <div class="sd-toc-inner">
+                            <h2>目录</h2>
+                            {{ $toc }}
+                        </div>
+                    </aside>
+                {{- end -}}
+
+                <div class="sd-prose">
+                    {{- .Content -}}
+                    {{- with .Params.links }}
+                        <h2>参考链接</h2>
+                        <ul>
+                            {{- range . }}
+                                <li><a href="{{ .url }}">{{ .name }}</a></li>
+                            {{- end -}}
+                        </ul>
+                    {{- end -}}
+                </div>
+            </div>
+
+            <footer class="sd-article-foot">
+                {{- with .Params.tags -}}
+                    <div class="sd-post-tags">
+                        {{- range . }}
+                            <a href="{{ (printf "/tags/%s/" (. | urlize)) | relLangURL }}">#{{ . }}</a>
+                        {{- end -}}
+                    </div>
+                {{- end -}}
+
+                {{- $prev := .PrevInSection -}}
+                {{- $next := .NextInSection -}}
+                {{- if or $prev $next -}}
+                    <nav class="sd-article-nav">
+                        {{- with $prev -}}
+                            <a class="sd-article-nav-item" href="{{ .RelPermalink }}">
+                                <span>← 上一篇</span>
+                                <strong>{{ .Title }}</strong>
+                            </a>
+                        {{- end -}}
+                        {{- with $next -}}
+                            <a class="sd-article-nav-item is-next" href="{{ .RelPermalink }}">
+                                <span>下一篇 →</span>
+                                <strong>{{ .Title }}</strong>
+                            </a>
+                        {{- end -}}
+                    </nav>
+                {{- end -}}
+            </footer>
+        </article>
+
+    {{- else -}}
+        {{- /* 关于、友链等普通页面 */ -}}
+        <article class="sd-page">
+            <header class="sd-page-head is-left">
+                <h1>{{ .Title }}</h1>
+                {{- with .Description }}<p>{{ . }}</p>{{ end -}}
+            </header>
+
+            {{- /* 友情链接：条目含 website 字段 */ -}}
+            {{- $links := slice -}}
+            {{- with .Params.links -}}
+                {{- $links = where . "website" "!=" nil -}}
+            {{- end -}}
+            {{- with $links }}
+                <div class="sd-friends">
+                    {{- range $links }}
+                        <a class="sd-friend" href="{{ .website }}" target="_blank" rel="noopener noreferrer">
+                            {{- with .image }}
+                                <img src="{{ . }}" alt="" loading="lazy">
+                            {{- else }}
+                                <span class="sd-friend-avatar">{{ substr (default "?" .title) 0 1 }}</span>
+                            {{- end }}
+                            <div class="sd-friend-body">
+                                <strong>{{ .title | default .name }}</strong>
+                                {{- with .description }}<p>{{ . }}</p>{{ end }}
+                            </div>
+                        </a>
+                    {{- end }}
+                </div>
+            {{- end -}}
+
+            <div class="sd-prose">{{ .Content }}</div>
+        </article>
+    {{- end -}}
+{{ end }}

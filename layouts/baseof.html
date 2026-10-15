@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="{{ .Site.LanguageCode }}" dir="{{ default `ltr` .Language.LanguageDirection }}">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <title>{{ if .IsHome }}{{ .Site.Title }}{{ else }}{{ .Title }} · {{ .Site.Title }}{{ end }}</title>
+
+    {{- with or .Params.description .Summary }}
+    <meta name="description" content="{{ . | plainify | truncate 160 }}">
+    {{- end }}
+
+    <link rel="canonical" href="{{ .Permalink }}">
+    <link rel="icon" href="{{ "favicon.ico" | relURL }}" type="image/x-icon">
+    {{- with .OutputFormats.Get "RSS" }}
+    <link rel="alternate" type="application/rss+xml" href="{{ .Permalink }}" title="{{ $.Site.Title }}">
+    {{- end }}
+
+    <meta property="og:type" content="{{ if and .IsPage (eq .Kind "page") }}article{{ else }}website{{ end }}">
+    <meta property="og:title" content="{{ .Title | default .Site.Title }}">
+    <meta property="og:url" content="{{ .Permalink }}">
+    <meta property="og:site_name" content="{{ .Site.Title }}">
+    <meta name="twitter:card" content="summary_large_image">
+    {{- with partial "helper/image" (dict "Image" .Params.image "Resources" .Resources "Context" .) }}
+    <meta property="og:image" content="{{ .Permalink }}">
+    {{- end }}
+
+    {{- /* 走 Hugo Pipes 输出带内容指纹的文件名，缓存可长期有效且改内容即失效 */ -}}
+    {{- with resources.Get "css/site.css" }}
+        {{- $sdCss := . | minify | fingerprint }}
+        <link rel="stylesheet" href="{{ $sdCss.RelPermalink }}" integrity="{{ $sdCss.Data.Integrity }}">
+    {{- end }}
+
+    {{- /* 与 Stack 主题共用同一个 localStorage 键，两处切换的明暗状态保持同步 */ -}}
+    <script>
+        (function () {
+            var key = 'StackColorScheme';
+            var saved = null;
+            try { saved = localStorage.getItem(key); } catch (e) {}
+            var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches === true;
+            document.documentElement.dataset.scheme =
+                (saved === 'dark' || saved === 'auto' && prefersDark) ? 'dark' : 'light';
+        })();
+    </script>
+
+    {{- block "head" . }}{{ end }}
+</head>
+
+<body class="sd-body">
+    {{- partial "site/header.html" . -}}
+
+    <main class="sd-main">
+        {{- block "main" . }}{{ end }}
+    </main>
+
+    {{- partial "site/footer.html" . -}}
+
+    <button class="sd-to-top" id="site-to-top" type="button" aria-label="返回顶部">
+        <svg viewBox="0 0 24 24"><path d="M12 19V5M5 12l7-7 7 7"></path></svg>
+    </button>
+
+    {{- with resources.Get "js/site.js" }}
+        <script src="{{ (. | minify | fingerprint).RelPermalink }}" defer></script>
+    {{- end }}
+    {{- block "scripts" . }}{{ end }}
+</body>
+</html>

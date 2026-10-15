@@ -1,0 +1,47 @@
+{{- /*
+  文章列表项。传入页面集合。
+  用法：{{ partial "site/post-list.html" $pages }}
+*/ -}}
+{{- $pages := . -}}
+
+{{- if not $pages -}}
+    <p class="sd-empty">这里还什么都没有。</p>
+{{- else -}}
+    <div class="sd-postlist">
+        {{- range $pages -}}
+            {{- $cover := partial "helper/image" (dict "Image" .Params.image "Resources" .Resources "Context" .) -}}
+            <article class="sd-post">
+                {{- if $cover }}
+                    <a class="sd-post-cover" href="{{ .RelPermalink }}" aria-hidden="true" tabindex="-1">
+                        <img src="{{ $cover.Permalink }}" alt="" loading="lazy">
+                    </a>
+                {{- end -}}
+
+                <div class="sd-post-body">
+                    <div class="sd-post-meta">
+                        <time datetime="{{ .Date.Format "2006-01-02" }}">{{ .Date.Format "2006-01-02" }}</time>
+                        {{- if not .Date.IsZero }}<i></i>{{ end }}
+                        <span>{{ .ReadingTime }} 分钟阅读</span>
+                        {{- if .Draft }}<em class="sd-badge">草稿</em>{{ end }}
+                    </div>
+
+                    <h2 class="sd-post-title"><a href="{{ .RelPermalink }}">{{ .Title }}</a></h2>
+
+                    {{- $desc := .Description | default (.Summary | plainify) -}}
+                    {{- with $desc }}
+                        <p class="sd-post-desc">{{ . | plainify | truncate 130 }}</p>
+                    {{- end }}
+
+                    {{- $tags := .Params.tags -}}
+                    {{- with $tags }}
+                        <div class="sd-post-tags">
+                            {{- range . }}
+                                <a href="{{ (printf "/tags/%s/" (. | urlize)) | relLangURL }}">#{{ . }}</a>
+                            {{- end -}}
+                        </div>
+                    {{- end }}
+                </div>
+            </article>
+        {{- end -}}
+    </div>
+{{- end -}}

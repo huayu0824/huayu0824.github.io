@@ -1,0 +1,11 @@
+{{ define "main" }}
+    <div class="sd-404">
+        <p class="sd-404-code">404</p>
+        <h1>{{ T "notFound.title" }}</h1>
+        <p>{{ T "notFound.subtitle" }}</p>
+        <div class="sd-404-actions">
+            <a class="sd-btn" href="{{ "/" | relLangURL }}">回到首页</a>
+            <a class="sd-btn is-ghost" href="{{ "/search/" | relLangURL }}">去搜索</a>
+        </div>
+    </div>
+{{ end }}

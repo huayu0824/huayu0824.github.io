@@ -1,0 +1,106 @@
+{{- /*
+  Flow 页面主体：左侧日历 + 右侧按月分组的文章流。
+  可配置项（config/_default/params.toml 的 [flow] 段）：
+    sections  参与流式展示的栏目，默认取 mainSections
+    limit     最多展示多少篇，0 表示不限制
+    clamp     正文折叠高度（px），小于该高度的正文不折叠
+*/ -}}
+{{- $monthEN := slice "January" "February" "March" "April" "May" "June" "July" "August" "September" "October" "November" "December" -}}
+
+{{- $sections := site.Params.flow.sections | default site.Params.mainSections -}}
+{{- $limit := int (site.Params.flow.limit | default 0) -}}
+{{- $clamp := int (site.Params.flow.clamp | default 360) -}}
+
+{{- $pages := where site.RegularPages "Section" "in" $sections -}}
+{{- $pages = $pages.ByDate.Reverse -}}
+{{- if gt $limit 0 -}}{{- $pages = first $limit $pages -}}{{- end -}}
+
+{{- $days := slice -}}
+{{- range $pages -}}{{- $days = $days | append (.Date.Format "2006-01-02") -}}{{- end -}}
+
+<section class="flow-hero">
+    <h1>{{ .Title | default "Flow" }}</h1>
+    <p><em>{{ .Params.subtitle | default (printf "%d daily notes." (len $pages)) }}</em></p>
+</section>
+
+{{- if not $pages -}}
+    <p class="flow-empty">还没有内容，去后台写第一篇吧。</p>
+{{- else -}}
+<div class="flow-layout">
+    <aside class="flow-calendar-col">
+        <div class="flow-calendar">
+            <div class="flow-calendar-bar">
+                <button type="button" id="flow-cal-prev" aria-label="上个月">
+                    <svg viewBox="0 0 24 24"><path d="m15 5-7 7 7 7"></path></svg>
+                </button>
+                <b id="flow-cal-label"></b>
+                <button type="button" id="flow-cal-next" aria-label="下个月">
+                    <svg viewBox="0 0 24 24"><path d="m9 5 7 7-7 7"></path></svg>
+                </button>
+            </div>
+
+            <div class="flow-calendar-week" aria-hidden="true">
+                {{- range slice "Sun" "Mon" "Tue" "Wed" "Thu" "Fri" "Sat" }}<span>{{ . }}</span>{{ end -}}
+            </div>
+            <div class="flow-calendar-days" id="flow-cal-days"></div>
+
+            <a class="flow-calendar-browse" id="flow-browse" href="#flow-stream">
+                <svg viewBox="0 0 24 24"><path d="m9 5 7 7-7 7"></path></svg>Browse
+            </a>
+        </div>
+    </aside>
+
+    <div class="flow-stream" id="flow-stream">
+        <span class="flow-progress" id="flow-progress" aria-hidden="true"></span>
+
+        {{- range $pages.GroupByDate "2006-01" -}}
+            {{- $key := .Key -}}
+            {{- $year := substr $key 0 4 -}}
+            {{- $month := index $monthEN (sub (int (substr $key 5 2)) 1) -}}
+
+            <section class="flow-month" id="m-{{ $key }}" data-month="{{ $key }}">
+                <header class="flow-month-head">
+                    <h2>{{ $month }} <span>· {{ $year }}</span></h2>
+                    <span class="flow-month-count">{{ len .Pages }}</span>
+                </header>
+
+                {{- range .Pages -}}
+                    {{- $day := .Date.Format "2006-01-02" -}}
+                    <article class="flow-entry" id="d-{{ $day }}" data-clamp="{{ $clamp }}">
+
+                        <div class="flow-entry-head">
+                            <div class="flow-entry-date">
+                                <time datetime="{{ $day }}">{{ $day }}</time>
+                                <span>{{ .Date.Weekday }}</span>
+                            </div>
+                            <a href="{{ .RelPermalink }}" aria-label="打开《{{ .Title }}》">
+                                <svg viewBox="0 0 24 24"><path d="M4 12h15M13 6l6 6-6 6"></path></svg>
+                            </a>
+                        </div>
+
+                        <h3 class="flow-entry-title"><a href="{{ .RelPermalink }}">{{ .Title }}</a></h3>
+
+                        <div class="sd-prose">{{ .Content }}</div>
+
+                        <button class="flow-expand" type="button" hidden>
+                            展开全文
+                            <svg viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"></path></svg>
+                        </button>
+
+                        {{- $tags := .Params.tags -}}
+                        {{- with $tags }}
+                            <div class="flow-entry-tags">
+                                {{- range . }}
+                                    <a href="{{ (printf "/tags/%s/" (. | urlize)) | relLangURL }}">#{{ . }}</a>
+                                {{- end -}}
+                            </div>
+                        {{- end -}}
+                    </article>
+                {{- end -}}
+            </section>
+        {{- end -}}
+    </div>
+</div>
+
+<script type="application/json" id="flow-index">{{ dict "days" $days "total" (len $pages) | jsonify | safeJS }}</script>
+{{- end -}}

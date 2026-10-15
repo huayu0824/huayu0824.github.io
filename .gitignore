@@ -9,6 +9,12 @@ hugo.exe
 # Syncthing 回收站
 .trash/
 
+# 博客后台（admin/）
+/admin/node_modules/
+/admin/.dev.vars
+/admin/.wrangler/
+/admin/.mf/
+
 # 系统垃圾文件
 Thumbs.db
 Desktop.ini

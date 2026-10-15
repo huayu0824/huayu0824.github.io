@@ -1,0 +1,30 @@
+{{- $cur := . -}}
+<header class="sd-header">
+    <a class="sd-brand" href="{{ "/" | relLangURL }}">
+        {{- with site.Params.sidebar.avatar -}}
+            {{- $avatar := partial "helper/image" (dict "Image" . "Resources" resources "Context" $) -}}
+            <img src="{{ $avatar.Permalink }}" alt="">
+        {{- end -}}
+        <span>{{ $cur.Site.Title }}</span>
+    </a>
+
+    <nav class="sd-nav">
+        {{- range $cur.Site.Menus.main -}}
+            {{- $href := .URL | relLangURL -}}
+            {{- $isActive := eq (strings.TrimSuffix "/" $cur.RelPermalink) (strings.TrimSuffix "/" $href) -}}
+            <a href="{{ $href }}"{{ if $isActive }} class="is-active" aria-current="page"{{ end }}>{{ .Name }}</a>
+        {{- end -}}
+    </nav>
+
+    <div class="sd-tools">
+        {{- with $cur.Site.Home.OutputFormats.Get "RSS" -}}
+            <a class="sd-icon-btn" href="{{ .RelPermalink }}" aria-label="RSS 订阅">
+                <svg viewBox="0 0 24 24"><path d="M5 19a0 0 0 1 0 0-.01"></path><path d="M4 11a9 9 0 0 1 9 9"></path><path d="M4 4a16 16 0 0 1 16 16"></path></svg>
+            </a>
+        {{- end -}}
+        <a class="sd-icon-btn" href="{{ "/search/" | relLangURL }}" aria-label="搜索">
+            <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.6-3.6"></path></svg>
+        </a>
+        <button class="sd-icon-btn" id="site-scheme" type="button" aria-label="切换明暗"></button>
+    </div>
+</header>

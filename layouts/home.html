@@ -1,0 +1,13 @@
+{{ define "main" }}
+    {{- $paginator := partial "helper/paginator.html" . -}}
+
+    <div class="sd-page-head">
+        <h1>{{ .Site.Title }}</h1>
+        {{- with .Site.Params.sidebar.subtitle }}
+            <p>{{ . }}</p>
+        {{- end }}
+    </div>
+
+    {{ partial "site/post-list.html" $paginator.Pages }}
+    {{ partial "site/pagination.html" $paginator }}
+{{ end }}

@@ -1,0 +1,13 @@
+{{ define "main" }}
+    {{- $paginator := partial "helper/paginator.html" . -}}
+
+    <div class="sd-page-head">
+        <h1>{{ .Title }}</h1>
+        {{- with .Description }}<p>{{ . }}</p>{{ else -}}
+            <p>共 {{ $paginator.TotalNumberOfElements }} 篇</p>
+        {{- end -}}
+    </div>
+
+    {{ partial "site/post-list.html" $paginator.Pages }}
+    {{ partial "site/pagination.html" $paginator }}
+{{ end }}

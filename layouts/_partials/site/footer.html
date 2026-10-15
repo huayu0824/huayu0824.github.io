@@ -1,0 +1,24 @@
+{{- $site := .Site -}}
+{{- $since := $site.Params.footer.since -}}
+{{- $now := now.Year -}}
+<footer class="sd-footer">
+    <div class="sd-footer-inner">
+        <p class="sd-footer-copyright">
+            © {{ $since }}{{ if and $since (lt $since $now) }}–{{ $now }}{{ end }}
+            {{ $site.Title }}
+        </p>
+
+        {{- $custom := $site.Params.footer.customText -}}
+        {{- if and $custom (ne ($custom | string) $site.Title) -}}
+            <p class="sd-footer-custom">{{ $custom | safeHTML }}</p>
+        {{- end -}}
+
+        {{- with $site.Menus.social }}
+            <div class="sd-footer-social">
+                {{- range . }}
+                    <a href="{{ .URL }}" rel="noopener noreferrer" target="_blank" aria-label="{{ .Name }}">{{ .Name }}</a>
+                {{- end -}}
+            </div>
+        {{- end -}}
+    </div>
+</footer>

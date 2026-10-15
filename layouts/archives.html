@@ -1,0 +1,30 @@
+{{ define "main" }}
+    {{- $pages := where site.RegularPages "Section" "in" site.Params.mainSections -}}
+    {{- $pages = $pages.ByDate.Reverse -}}
+
+    <div class="sd-page-head">
+        <h1>{{ .Title }}</h1>
+        <p>共 {{ len $pages }} 篇</p>
+    </div>
+
+    {{- if not $pages -}}
+        <p class="sd-empty">还没有文章。</p>
+    {{- else -}}
+        <div class="sd-archives">
+            {{- range $pages.GroupByDate "2006" -}}
+                <section class="sd-archive-year">
+                    <h2>{{ .Key }}<span>{{ len .Pages }}</span></h2>
+                    <ul>
+                        {{- range .Pages -}}
+                            <li>
+                                <time datetime="{{ .Date.Format "2006-01-02" }}">{{ .Date.Format "01-02" }}</time>
+                                <a href="{{ .RelPermalink }}">{{ .Title }}</a>
+                                {{- if .Draft }}<em class="sd-badge">草稿</em>{{ end -}}
+                            </li>
+                        {{- end -}}
+                    </ul>
+                </section>
+            {{- end -}}
+        </div>
+    {{- end -}}
+{{ end }}

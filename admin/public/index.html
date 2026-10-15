@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>博客后台 · 花羽的体育笔记</title>
+    <script>
+        (function () {
+            var saved = null;
+            try { saved = localStorage.getItem('hd-scheme'); } catch (e) {}
+            var dark = saved === 'dark' ||
+                (saved !== 'light' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+            document.documentElement.dataset.scheme = dark ? 'dark' : 'light';
+        })();
+    </script>
+    <link rel="stylesheet" href="app.css">
+</head>
+<body>
+
+<!-- ---------------------------------------------------------------- 登录态 -->
+<div class="gate" id="gate" hidden>
+    <div class="gate-card">
+        <h1>博客后台</h1>
+        <p class="gate-sub">用 GitHub 账号登录，之后就能在这里写文章。<br>保存后会自动提交到仓库，站点约 1 分钟内更新。</p>
+        <a class="btn-primary" href="/auth/login">用 GitHub 登录</a>
+        <p class="gate-hint" id="gateHint"></p>
+    </div>
+</div>
+
+<!-- ------------------------------------------------------------------ 主界面 -->
+<div class="app" id="app" hidden>
+
+    <header class="topbar">
+        <div class="topbar-left">
+            <strong>博客后台</strong>
+            <span class="repo" id="repoInfo"></span>
+        </div>
+        <div class="topbar-right">
+            <a class="link" id="siteLink" href="/" target="_blank" rel="noopener">查看站点 ↗</a>
+            <img class="avatar" id="avatar" alt="">
+            <span class="who" id="who"></span>
+            <a class="link" href="/auth/logout">退出</a>
+        </div>
+    </header>
+
+    <div class="body">
+
+        <!-- 文章列表 -->
+        <aside class="sidebar">
+            <button class="btn-primary block" id="newBtn">＋ 新建文章</button>
+
+            <input class="filter" id="filter" type="search" placeholder="筛选标题 / 标签…" autocomplete="off">
+
+            <div class="list" id="list"></div>
+
+            <p class="empty" id="listEmpty" hidden>没有匹配的文章</p>
+        </aside>
+
+        <!-- 编辑区 -->
+        <section class="editor" id="editor">
+
+            <div class="editor-empty" id="editorEmpty">
+                <p>从左边选一篇文章，或者新建一篇。</p>
+            </div>
+
+            <form class="editor-form" id="form" hidden>
+                <div class="editor-head">
+                    <input class="title-input" id="fTitle" placeholder="文章标题" autocomplete="off">
+                    <div class="editor-actions">
+                        <label class="draft-toggle">
+                            <input type="checkbox" id="fDraft"><span>草稿</span>
+                        </label>
+                        <button class="btn-primary" type="submit" id="saveBtn">保存</button>
+                    </div>
+                </div>
+
+                <div class="meta-grid">
+                    <label class="field">
+                        <span>网址别名 slug</span>
+                        <input id="fSlug" placeholder="my-post" autocomplete="off">
+                    </label>
+                    <label class="field">
+                        <span>发布日期</span>
+                        <input id="fDate" type="date">
+                    </label>
+                    <label class="field">
+                        <span>分类（逗号分隔）</span>
+                        <input id="fCategories" placeholder="项目, 随笔" autocomplete="off">
+                    </label>
+                    <label class="field">
+                        <span>标签（逗号分隔）</span>
+                        <input id="fTags" placeholder="ESP32, AI" autocomplete="off">
+                    </label>
+                </div>
+
+                <label class="field">
+                    <span>摘要</span>
+                    <textarea id="fDescription" rows="2" placeholder="一句话说明这篇文章"></textarea>
+                </label>
+
+                <label class="field">
+                    <span>封面图</span>
+                    <div class="cover-row">
+                        <input id="fImage" placeholder="留空则无封面" autocomplete="off">
+                        <button class="btn-ghost" type="button" id="coverPick">上传</button>
+                        <input type="file" id="coverFile" accept="image/*" hidden>
+                    </div>
+                </label>
+
+                <div class="editor-main">
+                    <div class="pane">
+                        <div class="pane-head">
+                            <span>正文 Markdown</span>
+                            <span class="pane-hint">可直接粘贴图片</span>
+                        </div>
+                        <textarea id="fContent" class="content-input" spellcheck="false"
+                                  placeholder="## 小标题&#10;&#10;正文…"></textarea>
+                    </div>
+
+                    <div class="pane">
+                        <div class="pane-head">
+                            <span>预览</span>
+                            <button class="btn-link" type="button" id="previewToggle">编辑优先</button>
+                        </div>
+                        <div class="preview prose" id="preview"></div>
+                    </div>
+                </div>
+
+                <div class="editor-foot">
+                    <button class="btn-danger" type="button" id="deleteBtn">删除这篇文章</button>
+                    <span class="save-state" id="saveState"></span>
+                    <a class="link" id="viewLink" href="#" target="_blank" rel="noopener">线上页面 ↗</a>
+                </div>
+            </form>
+        </section>
+    </div>
+</div>
+
+<div class="toast" id="toast" hidden></div>
+
+<script src="app.js"></script>
+</body>
+</html>

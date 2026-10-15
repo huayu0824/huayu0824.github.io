@@ -1,0 +1,75 @@
+{{ define "head" }}
+    {{- with .OutputFormats.Get "json" -}}
+        <link rel="preload" href="{{ .RelPermalink }}" as="fetch" crossorigin="anonymous">
+    {{- end -}}
+{{ end }}
+
+{{ define "main" }}
+    <div class="sd-page-head">
+        <h1>{{ .Title | default (T "search.title") }}</h1>
+        <p>{{ T "search.placeholder" }}</p>
+    </div>
+
+    {{- /* 结构需与主题的 assets/ts/search.tsx 保持一致 */ -}}
+    <form action="{{ .RelPermalink }}" class="search-form"{{ with .OutputFormats.Get "json" }} data-json="{{ .RelPermalink }}"{{ end }}>
+        <input type="search" name="keyword" placeholder="{{ T `search.placeholder` }}" autocomplete="off" aria-label="{{ T `search.title` }}">
+        <button type="submit" title="{{ T `search.title` }}">
+            <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.6-3.6"></path></svg>
+        </button>
+    </form>
+
+    <div class="search-result hidden">
+        <h3 class="search-result--title"></h3>
+        <div class="search-result--list"></div>
+    </div>
+
+    <script>
+        window.searchResultTitleTemplate = "{{ T `search.resultTitle` }}";
+    </script>
+{{ end }}
+
+{{ define "scripts" }}
+    {{- /*
+        主题的 assets/ts/search.tsx 是 JSX，Hugo 用 JSXFactory=createElement 编译，
+        依赖全局 createElement。原本由主题的 main.ts 提供，这里补一个等价实现
+        （并把 JSX 的 className 正确映射为 class，否则结果条目没有样式）。
+    */ -}}
+    <script>
+        window.createElement = function (tag, attrs) {
+            var el = document.createElement(tag);
+
+            for (var name in attrs) {
+                if (!Object.prototype.hasOwnProperty.call(attrs, name)) continue;
+                var value = attrs[name];
+
+                if (name === 'dangerouslySetInnerHTML') {
+                    if (value) el.innerHTML = value.__html == null ? '' : value.__html;
+                } else if (name === 'className') {
+                    if (value) el.setAttribute('class', value);
+                } else if (value === true) {
+                    el.setAttribute(name, name);
+                } else if (value !== false && value != null) {
+                    el.setAttribute(name, String(value));
+                }
+            }
+
+            for (var i = 2; i < arguments.length; i++) {
+                var child = arguments[i];
+                if (!child) continue;
+                el.appendChild(
+                    child.nodeType == null
+                        ? document.createTextNode(String(child))
+                        : child
+                );
+            }
+
+            return el;
+        };
+    </script>
+
+    {{- $opts := dict "minify" hugo.IsProduction "JSXFactory" "createElement" -}}
+    {{- with resources.Get "ts/search.tsx" -}}
+        {{- $searchScript := . | js.Build $opts -}}
+        <script src="{{ $searchScript.RelPermalink }}" defer></script>
+    {{- end -}}
+{{ end }}

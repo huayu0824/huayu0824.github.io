@@ -46,3 +46,12 @@ favicon        = "/favicon.ico"
     [cookies.categories]
         analytics  = true
         functional = true
+
+# Flow 页面（/flow/）的配置
+[flow]
+    # 参与流式展示的栏目，留空则使用 mainSections
+    sections = []
+    # 最多展示多少篇文章，0 = 不限制
+    limit = 0
+    # 正文超过该高度（px）时折叠，0 = 永不折叠
+    clamp = 360
