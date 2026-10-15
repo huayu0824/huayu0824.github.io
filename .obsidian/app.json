@@ -1,3 +1,26 @@
 {
-  "useMarkdownLinks": true
+  "useMarkdownLinks": true,
+  "newLinkFormat": "relative",
+  "attachmentFolderPath": ".",
+  "userIgnoreFilters": [
+    "^\\.git/",
+    "^\\.next/",
+    "^\\.trash/",
+    "^node_modules/",
+    "^out/",
+    "^admin/node_modules/",
+    "^admin/\\.wrangler/",
+    "^public/posts/",
+    "^public/books/",
+    "^public/flows/",
+    "^public/knowledge-graph",
+    "^public/images/nextImageExportOptimizer/",
+    "^docs/",
+    "^imports/",
+    "^packages/",
+    "^scripts/",
+    "^src/",
+    "^templates/",
+    "^tests/"
+  ]
 }

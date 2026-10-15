@@ -1,0 +1,49 @@
+import Link from 'next/link';
+import SectionHeading from './ui/SectionHeading';
+import { T } from './T';
+
+export interface RecentNoteItem {
+  slug: string;
+  date: string;
+  title?: string;
+  excerpt: string;
+}
+
+interface RecentNotesSectionProps {
+  notes: RecentNoteItem[];
+}
+
+export default function RecentNotesSection({ notes }: RecentNotesSectionProps) {
+  if (notes.length === 0) return null;
+
+  return (
+    <section id="recent-flows">
+      <div className="flex items-center justify-between mb-8">
+        <SectionHeading><T k="recent_notes" /></SectionHeading>
+        <Link
+          href="/flows"
+          className="text-sm text-muted hover:text-accent transition-colors no-underline"
+        >
+          <T k="all_flows" /> →
+        </Link>
+      </div>
+
+      <div className="space-y-0">
+        {notes.map(note => (
+          <div key={note.slug} className="relative pl-6 pb-6 border-l-2 border-line-strong last:pb-0 last:border-l-transparent">
+            <div className="absolute -left-[5px] top-1.5 w-2 h-2 rounded-full bg-accent" />
+            <Link href={`/flows/${note.slug}`} className="no-underline group">
+              <time className="text-sm font-mono text-accent group-hover:text-accent/70 transition-colors">{note.date}</time>
+              {note.title && note.title !== note.date && (
+                <h3 className="mt-0.5 text-sm font-semibold text-heading group-hover:text-accent transition-colors">{note.title}</h3>
+              )}
+            </Link>
+            {note.excerpt && (
+              <p className="mt-1.5 text-sm text-muted line-clamp-2">{note.excerpt}</p>
+            )}
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}

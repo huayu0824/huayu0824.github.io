@@ -1,0 +1,226 @@
+import fs from 'fs';
+import path from 'path';
+import matter from 'gray-matter';
+import { parseRstDocument } from '../rst';
+import { siteConfig } from '../../../site.config';
+import {
+  domainDir,
+  readUtf8File,
+  isMarkdownFilename,
+  isRstFilename,
+  parseSlugAndDate,
+  assertSafeSeriesSlug,
+  assertNotLegacyLocaleSibling,
+} from './io';
+import { createKeyedMemo, createProdKeyedMemo } from './cache';
+
+const DEFAULT_LOCALE = siteConfig.i18n.defaultLocale;
+
+/** Composite memo key: locale trees are parallel content sets, so every per-slug memo is per-locale too. */
+function localeKey(locale: string, slug: string): string {
+  return `${locale} ${slug}`;
+}
+
+/**
+ * Series index discovery and lightweight series metadata.
+ *
+ * This module reads series index files directly (gray-matter / rST parse)
+ * WITHOUT going through the post parsers — that is what keeps the
+ * dependency chain acyclic: series-metadata → parse → posts → series.
+ * The post parsers call `getSeriesTitle` / `getSeriesAuthors` here to
+ * inherit series metadata; nothing here may import from `parse.ts`.
+ */
+
+export type SeriesFormat = 'markdown' | 'rst';
+
+export interface SeriesIndexInfo {
+  format: SeriesFormat;
+  fullPath: string;
+}
+
+export interface SeriesContentEntry {
+  fullPath: string;
+  slug: string;
+  dateFromFileName?: string;
+}
+
+export function resolveUniqueSeriesIndex(seriesSlug: string, format: SeriesFormat, locale: string = DEFAULT_LOCALE): string | null {
+  assertSafeSeriesSlug(seriesSlug);
+  const seriesPath = path.join(domainDir('series', locale), seriesSlug);
+  const candidates = format === 'rst'
+    ? ['index.rst', 'README.rst']
+    : ['index.mdx', 'index.md', 'README.mdx', 'README.md'];
+
+  const matches = candidates
+    .map(name => path.join(seriesPath, name))
+    .filter(fullPath => fs.existsSync(fullPath));
+
+  if (matches.length > 1) {
+    throw new Error(
+      `[amytis] Series "${seriesSlug}" has multiple ${format} index files: ${matches.map(match => path.basename(match)).join(', ')}.`
+    );
+  }
+
+  return matches[0] ?? null;
+}
+
+const seriesIndexInfoMemo = createProdKeyedMemo<string, SeriesIndexInfo | null>();
+
+/**
+ * Resolves a series' index file. Called repeatedly per slug (directly in
+ * getAllPosts and again inside getSeriesContentEntries, plus per-slug by
+ * getSeriesData/getSeriesTitle/getSeriesAuthors), so the result is memoized per
+ * slug in production. Dev recomputes each call so HMR sees a freshly-added
+ * index file. Throws still propagate (never cached).
+ */
+export function resolveSeriesIndexInfo(slug: string, locale: string = DEFAULT_LOCALE): SeriesIndexInfo | null {
+  return seriesIndexInfoMemo.get(localeKey(locale, slug), () => computeSeriesIndexInfo(slug, locale));
+}
+
+function computeSeriesIndexInfo(slug: string, locale: string): SeriesIndexInfo | null {
+  assertSafeSeriesSlug(slug);
+  const localeSeriesDir = domainDir('series', locale);
+  if (!fs.existsSync(localeSeriesDir)) return null;
+  const seriesPath = path.join(localeSeriesDir, slug);
+  if (!fs.existsSync(seriesPath) || !fs.statSync(seriesPath).isDirectory()) return null;
+
+  const rstIndex = resolveUniqueSeriesIndex(slug, 'rst', locale);
+  const markdownIndex = resolveUniqueSeriesIndex(slug, 'markdown', locale);
+
+  if (rstIndex && markdownIndex) {
+    throw new Error(
+      `[amytis] Series "${slug}" cannot contain both rST and Markdown index files (${path.basename(rstIndex)} and ${path.basename(markdownIndex)}).`
+    );
+  }
+  if (rstIndex) return { format: 'rst', fullPath: rstIndex };
+  if (markdownIndex) return { format: 'markdown', fullPath: markdownIndex };
+  return null;
+}
+
+export function getSeriesContentEntries(seriesSlug: string, locale: string = DEFAULT_LOCALE): SeriesContentEntry[] {
+  const indexInfo = resolveSeriesIndexInfo(seriesSlug, locale);
+  if (!indexInfo) return [];
+
+  const seriesPath = path.join(domainDir('series', locale), seriesSlug);
+  const seriesItems = fs.readdirSync(seriesPath, { withFileTypes: true });
+  const entries: SeriesContentEntry[] = [];
+  const seenSlugs = new Map<string, string>();
+  const seriesIndexBasenames = new Set(['index.rst', 'README.rst', 'index.md', 'index.mdx', 'README.md', 'README.mdx']);
+
+  for (const item of seriesItems) {
+    if (seriesIndexBasenames.has(item.name)) continue;
+
+    if (item.isFile()) {
+      const isMarkdown = isMarkdownFilename(item.name);
+      const isRst = isRstFilename(item.name);
+      if (!isMarkdown && !isRst) continue;
+      assertNotLegacyLocaleSibling(item.name, seriesPath);
+
+      const itemFormat: SeriesFormat = isRst ? 'rst' : 'markdown';
+      if (itemFormat !== indexInfo.format) {
+        throw new Error(`[amytis] Series "${seriesSlug}" mixes ${indexInfo.format} and ${itemFormat} files. Offending file: ${item.name}`);
+      }
+
+      const rawName = item.name.replace(/\.(mdx?|rst)$/, '');
+      const { slug, dateFromFileName } = parseSlugAndDate(rawName);
+      const prior = seenSlugs.get(slug);
+      if (prior) {
+        throw new Error(`[amytis] Series "${seriesSlug}" contains duplicate post slug "${slug}" from "${prior}" and "${item.name}".`);
+      }
+      seenSlugs.set(slug, item.name);
+      entries.push({ fullPath: path.join(seriesPath, item.name), slug, dateFromFileName });
+      continue;
+    }
+
+    if (item.isDirectory()) {
+      const folderPath = path.join(seriesPath, item.name);
+      const folderIndexRst = path.join(folderPath, 'index.rst');
+      const folderIndexMdx = path.join(folderPath, 'index.mdx');
+      const folderIndexMd = path.join(folderPath, 'index.md');
+      const hasRst = fs.existsSync(folderIndexRst);
+      const hasMdx = fs.existsSync(folderIndexMdx);
+      const hasMd = fs.existsSync(folderIndexMd);
+      const markdownCount = Number(hasMdx) + Number(hasMd);
+      const totalIndexCount = Number(hasRst) + markdownCount;
+
+      if (totalIndexCount === 0) continue;
+      if (hasRst && markdownCount > 0) {
+        throw new Error(`[amytis] Series "${seriesSlug}" post folder "${item.name}" cannot contain both index.rst and Markdown index files.`);
+      }
+      if (markdownCount > 1) {
+        throw new Error(`[amytis] Series "${seriesSlug}" post folder "${item.name}" cannot contain both index.md and index.mdx.`);
+      }
+
+      const itemFormat: SeriesFormat = hasRst ? 'rst' : 'markdown';
+      if (itemFormat !== indexInfo.format) {
+        throw new Error(`[amytis] Series "${seriesSlug}" mixes ${indexInfo.format} and ${itemFormat} files. Offending folder: ${item.name}`);
+      }
+
+      const { slug, dateFromFileName } = parseSlugAndDate(item.name);
+      const prior = seenSlugs.get(slug);
+      if (prior) {
+        throw new Error(`[amytis] Series "${seriesSlug}" contains duplicate post slug "${slug}" from "${prior}" and "${item.name}".`);
+      }
+      seenSlugs.set(slug, item.name);
+      entries.push({
+        fullPath: hasRst ? folderIndexRst : (hasMdx ? folderIndexMdx : folderIndexMd),
+        slug,
+        dateFromFileName,
+      });
+    }
+  }
+
+  return entries;
+}
+
+const seriesTitleMemo = createKeyedMemo<string, string | undefined>();
+
+export function getSeriesTitle(slug: string, locale: string = DEFAULT_LOCALE): string | undefined {
+  return seriesTitleMemo.get(localeKey(locale, slug), () => {
+    const indexInfo = resolveSeriesIndexInfo(slug, locale);
+    if (!indexInfo) return undefined;
+
+    if (indexInfo.format === 'rst') {
+      const parsed = parseRstDocument(readUtf8File(indexInfo.fullPath));
+      if (parsed.metadata.draft === true) return undefined;
+      return parsed.title;
+    }
+
+    const { data } = matter(readUtf8File(indexInfo.fullPath));
+    if (data.draft === true) return undefined;
+    return typeof data.title === 'string' ? data.title : undefined;
+  });
+}
+
+const seriesAuthorsMemo = createKeyedMemo<string, string[] | null>();
+
+/**
+ * Read explicitly configured authors from a series index file's frontmatter.
+ * Returns null if no authors are configured (as opposed to the default fallback).
+ */
+export function getSeriesAuthors(seriesSlug: string, locale: string = DEFAULT_LOCALE): string[] | null {
+  return seriesAuthorsMemo.get(localeKey(locale, seriesSlug), () => {
+    const indexInfo = resolveSeriesIndexInfo(seriesSlug, locale);
+    if (!indexInfo) return null;
+
+    if (indexInfo.format === 'rst') {
+      const parsed = parseRstDocument(readUtf8File(indexInfo.fullPath));
+      if (parsed.metadata.authors && parsed.metadata.authors.length > 0) {
+        return parsed.metadata.authors;
+      }
+      if (parsed.metadata.author && typeof parsed.metadata.author === 'string') {
+        return [parsed.metadata.author];
+      }
+      return null;
+    }
+
+    const { data } = matter(readUtf8File(indexInfo.fullPath));
+    if (data.authors && Array.isArray(data.authors) && data.authors.length > 0) {
+      return data.authors as string[];
+    }
+    if (data.author && typeof data.author === 'string') {
+      return [data.author as string];
+    }
+    return null;
+  });
+}

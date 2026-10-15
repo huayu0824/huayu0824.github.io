@@ -1,0 +1,96 @@
+import Link from 'next/link';
+import ExportedImage from 'next-image-export-optimizer';
+import MetaLabel from './ui/MetaLabel';
+import { getAuthorSlug } from '@/lib/content/authors';
+import { siteConfig } from '../../site.config';
+import { getTranslator } from '@/lib/i18n';
+import { shouldBypassImageOptimization } from '@/lib/image-utils';
+
+const isDev = process.env.NODE_ENV === 'development';
+const isExternal = (src: string) => src.startsWith('http') || src.startsWith('//');
+
+export default function AuthorCard({ authors, locale }: { authors: string[]; locale: string }) {
+  const { t } = getTranslator(locale);
+  if (!authors || authors.length === 0) return null;
+
+  return (
+    <div className="mt-12 flex flex-col gap-4">
+      {authors.map((author) => {
+        const slug = getAuthorSlug(author);
+        const profile = siteConfig.authors?.[author];
+        const hasSocial = profile?.social && profile.social.length > 0;
+        const avatarBypassOptimization = Boolean(
+          profile?.avatar && (isDev || isExternal(profile.avatar) || shouldBypassImageOptimization(profile.avatar))
+        );
+
+        return (
+          <div
+            key={author}
+            className="flex flex-col sm:flex-row sm:items-center gap-5 rounded-2xl border border-line bg-surface-faint px-6 py-5 transition-colors hover:bg-surface-soft"
+          >
+            {/* Left — avatar + author info */}
+            <div className="flex items-start gap-4 flex-1 min-w-0">
+              {profile?.avatar ? (
+                <ExportedImage
+                  src={profile.avatar}
+                  alt={author}
+                  width={56}
+                  height={56}
+                  className="w-14 h-14 rounded-full object-cover flex-shrink-0 ring-2 ring-line-strong"
+                  unoptimized={avatarBypassOptimization}
+                  placeholder={avatarBypassOptimization ? 'empty' : 'blur'}
+                />
+              ) : (
+                <div className="w-14 h-14 rounded-full bg-accent/10 flex items-center justify-center flex-shrink-0 text-accent font-serif font-bold text-2xl select-none">
+                  {author.charAt(0).toUpperCase()}
+                </div>
+              )}
+
+              <div className="min-w-0">
+                <MetaLabel as="p" className="mb-1">
+                  {t('written_by')}
+                </MetaLabel>
+                <Link
+                  href={`/authors/${slug}`}
+                  className="font-serif font-semibold text-lg text-heading hover:text-accent transition-colors no-underline"
+                >
+                  {author}
+                </Link>
+                {profile?.bio && (
+                  <p className="text-sm text-foreground/70 mt-1.5 leading-relaxed">
+                    {profile.bio}
+                  </p>
+                )}
+              </div>
+            </div>
+
+            {/* Right — social images (e.g. QR codes) */}
+            {hasSocial && (
+              <div className="flex justify-center gap-5 flex-shrink-0 border-t border-line pt-4 sm:border-t-0 sm:border-l sm:pt-0 sm:pl-6 sm:justify-start">
+                {profile.social!.map((item, index) => {
+                  const socialImageBypassOptimization = isDev || isExternal(item.image) || shouldBypassImageOptimization(item.image);
+                  return (
+                    <figure key={index} className="flex flex-col items-center gap-1.5">
+                      <ExportedImage
+                        src={item.image}
+                        alt={item.description}
+                        width={72}
+                        height={72}
+                        className="w-[72px] h-[72px] object-contain rounded-lg bg-white p-0.5"
+                        unoptimized={socialImageBypassOptimization}
+                        placeholder={socialImageBypassOptimization ? 'empty' : 'blur'}
+                      />
+                      <figcaption className="text-[10px] font-sans text-muted text-center leading-tight max-w-[72px]">
+                        {item.description}
+                      </figcaption>
+                    </figure>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}

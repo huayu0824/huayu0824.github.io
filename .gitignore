@@ -1,14 +1,61 @@
-# Hugo 构建产物（GitHub Actions 会自行构建，不需要入库）
-/public/
-/resources/
+# ── 依赖 ──────────────────────────────────────────────────────────────────
+/node_modules
+/.pnp
+.pnp.*
+
+# bun.lock 是唯一事实来源；npm 生成的锁文件不入库
+/package-lock.json
+/yarn.lock
+/pnpm-lock.yaml
+
+# ── Next.js 构建产物 ──────────────────────────────────────────────────────
+/.next/
+/out/
+/build
+
+# ── amytis 构建时生成的资源 ───────────────────────────────────────────────
+# 文章图片的源文件在 content/posts/<slug>/images/，构建时复制到 public/
+/public/posts/
+/public/books/
+/public/series/
+/public/flows/
+/public/notes/
+/public/pagefind/
+/public/knowledge-graph.json
+/public/**/nextImageExportOptimizer/
+!/public/next-image-export-optimizer-hashes.json
+
+# ── 导入用的原始文件（聊天导出、PDF 等），不发布 ──────────────────────────
+/imports/*
+!/imports/README.md
+
+# ── 环境变量 ──────────────────────────────────────────────────────────────
+.env*
+
+# ── TypeScript ────────────────────────────────────────────────────────────
+*.tsbuildinfo
+next-env.d.ts
+
+# ── 测试 ──────────────────────────────────────────────────────────────────
+/coverage
+/playwright-report/
+/test-results/
+
+# ── 博客后台（admin/）─────────────────────────────────────────────────────
+/admin/node_modules/
+/admin/.dev.vars
+/admin/.wrangler/
+/admin/.mf/
+
+# ── 本地工具产物 ──────────────────────────────────────────────────────────
 .hugo_build.lock
-
-# 本地 Hugo 可执行文件
-hugo.exe
-
-# Syncthing 回收站
 .trash/
+*.log
 
-# 系统垃圾文件
+# ── 系统垃圾文件 ──────────────────────────────────────────────────────────
+.DS_Store
 Thumbs.db
 Desktop.ini
+*.pem
+__pycache__/
+*.py[cod]
