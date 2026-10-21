@@ -10,6 +10,7 @@
     "tail": "wrangler tail",
     "verify": "bun run scripts/verify-admin.mjs",
     "verify:worker": "bun run scripts/verify-worker.mjs",
+    "verify:ui": "bun run scripts/verify-ui.mjs",
     "mock": "bun run scripts/dev-mock.mjs"
   },
   "dependencies": {

@@ -523,6 +523,45 @@ body.is-focus .drawer { top: 0; height: 100vh; }
 .check-row input { accent-color: var(--accent); }
 .check-row:hover { color: var(--accent); }
 
+/* 合集成员表：每行一个条目（引用文章 / 整个系列） */
+.coll-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 0;
+    border-bottom: 1px solid var(--border-soft);
+    flex-wrap: wrap;
+}
+
+.coll-row:last-of-type { border-bottom: 0; }
+
+.coll-row select,
+.coll-row input {
+    font-family: inherit;
+    font-size: 13px;
+    color: var(--text);
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    padding: 6px 9px;
+    min-width: 0;
+}
+
+.coll-kind { flex: 0 0 auto; }
+.coll-target { flex: 1 1 220px; }
+.coll-exclude { flex: 1 1 180px; }
+
+.coll-row select:focus,
+.coll-row input:focus { outline: none; border-color: var(--accent); }
+
+.panel-actions {
+    display: flex;
+    gap: 16px;
+    padding-top: 10px;
+    margin-top: 4px;
+    border-top: 1px solid var(--border-soft);
+}
+
 .chapter-item {
     padding: 10px 0;
     border-bottom: 1px solid var(--border-soft);

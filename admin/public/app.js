@@ -72,6 +72,9 @@
             newLabel: "＋ 新建系列",
             flags: ["draft", "featured"],
             fields: [
+                { id: "fSeriesType", api: "type", label: "类型", kind: "select",
+                  options: [["", "系列：文章归到同一个系列下"], ["collection", "合集：手工挑文章拼成一组"]],
+                  hint: "系列靠文章的 series 字段自动收集成员；合集不改任何文章的归属，自己挑成员（至少 1 个，否则 amytis 拒绝构建）" },
                 { id: "fSeriesSlug", api: "slug", label: "网址别名 slug", kind: "text", placeholder: "my-series" },
                 { id: "fSeriesDate", api: "date", label: "日期", kind: "date" },
                 { id: "fSeriesDesc", api: "excerpt", label: "简介", kind: "textarea", placeholder: "这个系列在做什么" },
@@ -118,12 +121,14 @@
         mode: "posts",
         lists: {},                 // type -> { items, total, loaded }
         current: null,             // { key }
+        currentData: null,         // 当前打开条目的完整数据
         dirty: false,
         filter: "",
         sort: "date-desc",
         booted: false,
         batch: null,               // Set<string> 选中的 key
-        linkTargets: {}            // slug -> { title, type }
+        linkTargets: {},           // slug -> { title, type }
+        collectionItems: []        // 合集成员的工作副本
     };
 
     var SUN_ICON =
@@ -269,6 +274,21 @@
                 ta.placeholder = f.placeholder || "";
                 ta.addEventListener("input", markDirty);
                 label.appendChild(ta);
+            } else if (f.kind === "select") {
+                var sel = document.createElement("select");
+                sel.id = f.id;
+                (f.options || []).forEach(function (opt) {
+                    var o = document.createElement("option");
+                    o.value = opt[0];
+                    o.textContent = opt[1];
+                    sel.appendChild(o);
+                });
+                sel.addEventListener("change", function () {
+                    markDirty();
+                    // 类型切换后，系列面板要跟着换（关联文章 ↔ 合集成员）
+                    if (f.api === "type") refreshSpecialPanel();
+                });
+                label.appendChild(sel);
             } else if (f.kind === "cover") {
                 var row = document.createElement("div");
                 row.className = "cover-row";
@@ -545,6 +565,7 @@
         try {
             var data = await api(TYPES[type].base + "/" + encodeURIComponent(key));
             state.current = { key: key, type: type };
+            state.currentData = data;
             state.dirty = false;
 
             $("editorEmpty").hidden = true;
@@ -561,9 +582,21 @@
                 var value = data[f.api];
                 if (f.kind === "tags" || f.kind === "list") {
                     el.value = Array.isArray(value) ? value.join(", ") : (value || "");
+                } else if (f.kind === "select") {
+                    // 只有选项里有的值才认，否则回到第一项
+                    var known = qsa("option", el).some(function (o) { return o.value === value; });
+                    el.value = known ? value : "";
                 } else {
                     el.value = value !== undefined && value !== null ? value : "";
                 }
+            });
+
+            // 合集成员的工作副本，改完随表单一起保存
+            state.collectionItems = (data.items || []).map(function (it) {
+                if (it && it.series) {
+                    return { series: it.series, exclude: (it.exclude || []).slice() };
+                }
+                return { post: (it && it.post) || "" };
             });
 
             $("viewLink").hidden = false;
@@ -586,6 +619,7 @@
     /**
      * 有些东西列表表单表达不了：
      *   系列 → 哪些文章挂在这个系列下
+     *   合集 → 手工挑的成员（文章 / 整个系列）
      *   书籍 → 章节表 + 每章正文
      * 这些单独用一个面板渲染。
      */
@@ -594,8 +628,26 @@
         panel.replaceChildren();
         panel.hidden = true;
 
-        if (type === "series") renderSeriesPanel(panel, data);
-        else if (type === "books") renderBookPanel(panel, data);
+        if (type === "series") {
+            if (data && data.type === "collection") renderCollectionPanel(panel, data);
+            else renderSeriesPanel(panel, data);
+        } else if (type === "books") renderBookPanel(panel, data);
+    }
+
+    /**
+     * 类型切换（系列 ↔ 合集）后重画面板。
+     * 面板内容取决于表单里的类型选择，不是文件里已保存的类型。
+     */
+    function refreshSpecialPanel() {
+        if (state.mode !== "series") return;
+        var typeEl = $("fSeriesType");
+        var isCollection = typeEl && typeEl.value === "collection";
+        var saved = state.currentData || {};
+        renderSpecialPanel("series", {
+            type: isCollection ? "collection" : "series",
+            items: isCollection ? (state.collectionItems || []) : [],
+            members: saved.members || []
+        });
     }
 
     /* ------------------------------------------------------ 系列：关联文章 */
@@ -663,6 +715,185 @@
         }).catch(function (e) {
             toast(e.message, true);
         });
+    }
+
+    /* --------------------------------------------------------- 合集：成员表 */
+
+    /**
+     * 合集的成员写在索引文件的 items 数组里，跟表单一起保存。
+     * 两种条目：
+     *   引用一篇文章   { post: "<slug>" }
+     *   整个系列收进来 { series: "<slug>", exclude: [...] }
+     *
+     * 引用键的形态由文章归属决定（跟 amytis 的 getCollectionKey 一致）：
+     *   独立文章   → posts/<slug>
+     *   系列内文章 → <series>/<slug>
+     */
+    function renderCollectionPanel(panel, data) {
+        panel.hidden = false;
+
+        var head = document.createElement("div");
+        head.className = "panel-head";
+        var h = document.createElement("strong");
+        h.textContent = "合集成员";
+        head.appendChild(h);
+        var hint = document.createElement("span");
+        hint.className = "pane-hint";
+        hint.textContent = "不改文章的系列归属，自己挑成员（至少 1 个）";
+        head.appendChild(hint);
+        panel.appendChild(head);
+
+        var box = document.createElement("div");
+        box.className = "panel-body";
+        panel.appendChild(box);
+
+        var items = state.collectionItems || [];
+        if (!items.length) {
+            var empty = document.createElement("p");
+            empty.className = "empty";
+            empty.textContent = "还没有成员，底下加一条";
+            box.appendChild(empty);
+        } else {
+            items.forEach(function (item, idx) {
+                box.appendChild(collectionItemRow(item, idx));
+            });
+        }
+
+        var bar = document.createElement("div");
+        bar.className = "panel-actions";
+
+        var addPost = document.createElement("button");
+        addPost.className = "btn-link";
+        addPost.type = "button";
+        addPost.textContent = "＋ 加一篇文章";
+        addPost.addEventListener("click", function () {
+            state.collectionItems = (state.collectionItems || []).concat([{ post: "" }]);
+            refreshSpecialPanel();
+            markDirty();
+        });
+
+        var addSeries = document.createElement("button");
+        addSeries.className = "btn-link";
+        addSeries.type = "button";
+        addSeries.textContent = "＋ 加一个系列";
+        addSeries.addEventListener("click", function () {
+            state.collectionItems = (state.collectionItems || []).concat([{ series: "" }]);
+            refreshSpecialPanel();
+            markDirty();
+        });
+
+        bar.appendChild(addPost);
+        bar.appendChild(addSeries);
+        box.appendChild(bar);
+    }
+
+    function collectionItemRow(item, idx) {
+        var row = document.createElement("div");
+        row.className = "coll-row";
+
+        var kind = document.createElement("select");
+        kind.className = "coll-kind";
+        [["post", "一篇文章"], ["series", "整个系列"]].forEach(function (opt) {
+            var o = document.createElement("option");
+            o.value = opt[0];
+            o.textContent = opt[1];
+            kind.appendChild(o);
+        });
+        kind.value = item.series ? "series" : "post";
+        kind.addEventListener("change", function () {
+            state.collectionItems[idx] = kind.value === "series" ? { series: "" } : { post: "" };
+            refreshSpecialPanel();
+            markDirty();
+        });
+
+        var target = document.createElement("select");
+        target.className = "coll-target";
+        if (kind.value === "series") fillSeriesOptions(target, item.series);
+        else fillPostOptions(target, item.post);
+        target.addEventListener("change", function () {
+            var cur = state.collectionItems[idx] || {};
+            if (kind.value === "series") {
+                cur.series = target.value;
+                delete cur.post;
+                delete cur.exclude;
+            } else {
+                cur.post = target.value;
+                delete cur.series;
+                delete cur.exclude;
+            }
+            state.collectionItems[idx] = cur;
+            markDirty();
+        });
+
+        row.appendChild(kind);
+        row.appendChild(target);
+
+        if (kind.value === "series") {
+            var ex = document.createElement("input");
+            ex.className = "coll-exclude";
+            ex.placeholder = "排除（逗号分隔的文章 slug，可留空）";
+            ex.value = (item.exclude || []).join(", ");
+            ex.addEventListener("input", function () {
+                var cur = state.collectionItems[idx] || {};
+                cur.exclude = ex.value.split(",").map(function (s) { return s.trim(); }).filter(Boolean);
+                state.collectionItems[idx] = cur;
+                markDirty();
+            });
+            row.appendChild(ex);
+        }
+
+        var del = document.createElement("button");
+        del.className = "btn-link danger";
+        del.type = "button";
+        del.textContent = "删除";
+        del.addEventListener("click", function () {
+            state.collectionItems.splice(idx, 1);
+            refreshSpecialPanel();
+            markDirty();
+        });
+        row.appendChild(del);
+
+        return row;
+    }
+
+    /** 文章下拉。引用键跟 amytis 的 getCollectionKey 保持一致 */
+    function fillPostOptions(select, current) {
+        var posts = (state.lists.posts && state.lists.posts.items) || [];
+        var blank = document.createElement("option");
+        blank.value = "";
+        blank.textContent = posts.length ? "选一篇文章…" : "（仓库里还没有文章）";
+        select.appendChild(blank);
+
+        posts.forEach(function (post) {
+            var key = post.series ? post.series + "/" + post.slug : "posts/" + post.slug;
+            var o = document.createElement("option");
+            o.value = key;
+            o.textContent = (post.title || post.slug) + "  ·  " + key;
+            select.appendChild(o);
+        });
+
+        select.value = current || "";
+    }
+
+    /** 系列下拉。不能选自己，否则合集会把自己收进来 */
+    function fillSeriesOptions(select, current) {
+        var list = (state.lists.series && state.lists.series.items) || [];
+        var self = state.current ? state.current.key : "";
+
+        var blank = document.createElement("option");
+        blank.value = "";
+        blank.textContent = list.length ? "选一个系列…" : "（仓库里还没有别的系列）";
+        select.appendChild(blank);
+
+        list.forEach(function (s) {
+            if (s.slug === self) return;
+            var o = document.createElement("option");
+            o.value = s.slug;
+            o.textContent = (s.title || s.slug);
+            select.appendChild(o);
+        });
+
+        select.value = current || "";
     }
 
     /* --------------------------------------------------------- 书籍：章节 */
@@ -842,6 +1073,8 @@
         });
 
         state.current = { key: null, type: type, isNew: true };
+        state.currentData = null;
+        state.collectionItems = [];
         $("saveState").textContent = "新内容，填完点保存";
         $("saveState").classList.remove("is-dirty", "is-error");
 
@@ -975,6 +1208,11 @@
             if (!el) return;
             payload[f.api] = el.value;
         });
+
+        // 合集的成员表不在普通字段里，单独带上，随表单一起保存
+        if (type === "series" && payload.type === "collection") {
+            payload.items = state.collectionItems || [];
+        }
 
         // 主键字段（slug / name）留空时按标题生成
         var keyField = TYPES[type].key;

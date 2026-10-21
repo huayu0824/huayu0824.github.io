@@ -62,6 +62,36 @@ posts: {
 **系列成员**用「文章 front matter 写 `series:` 字段」的方式自动收集，系列索引的 `posts` 数组强制留空。
 这是故意的：amytis 里 `posts` 数组一旦非空就会变成手动排序，引用一个不存在的 slug 会**让整站构建直接失败**。
 
+### 系列还是合集？
+
+后台的「系列」表单里有一个**类型**开关，两者是同一种文件夹（都在 `content/series/<slug>/`），
+靠索引 front matter 区分：
+
+| | 系列 | 合集 |
+|---|---|---|
+| 索引写法 | `posts: []` | `type: collection` + `items:` |
+| 成员怎么来 | 文章 front matter 的 `series:` 字段自动收集 | 手工挑，写在索引的 `items` 里 |
+| 一篇文章能进几个 | 只能一个（`series:` 字段只有一个值） | 多个，互不影响 |
+| 后台里的操作 | 勾选文章，会去改文章的 front matter | 挑文章/挑系列，不碰任何文章 |
+
+合集的 `items` 两种条目：
+
+```yaml
+items:
+  - post: posts/some-article      # 引用独立文章
+  - post: other-series/week-11    # 引用另一个系列里的文章
+  - series: other-series          # 整个系列收进来
+    exclude: [week-11]            # 还能排除其中几篇
+```
+
+引用键的形态跟 amytis 的 `getCollectionKey` 一致：独立文章是 `posts/<slug>`，系列内文章是 `<series>/<slug>`。
+后台的下拉里直接给出正确的键，不用手敲。
+
+**两条硬约束**（后台会提前拦下来，不会让你把站点写挂）：
+
+1. **合集至少要有 1 个成员**——amytis 的 `PostSchema` 明确规定 `Collections require at least one item`，空合集会让整站构建失败。
+2. **引用的文章/系列必须真的存在**——引用不到任何文章时 amytis 会直接抛错。后台保存前会逐个校验。
+
 ---
 
 ## 交互
@@ -102,8 +132,9 @@ npm run verify
 
 | 命令 | 验什么 |
 |------|--------|
-| `npm run verify` | 内容格式：用 amytis 真实加载器读回后台产物（46 项断言） |
-| `npm run verify:worker` | Worker 端到端：打桩 GitHub API，跑真实 Worker 代码（33 项断言） |
+| `npm run verify` | 内容格式：用 amytis 真实加载器读回后台产物（53 项断言） |
+| `npm run verify:worker` | Worker 端到端：打桩 GitHub API，跑真实 Worker 代码（40 项断言） |
+| `npm run verify:ui` | 前端交互：happy-dom 加载真实 index.html + app.js，驱动点击，断言最后发出的请求体（10 项断言） |
 | `npm run mock` | 本地假服务器：内存仓库 + 假 API + 托管前端，用来在浏览器里点 |
 
 ```bash
@@ -230,6 +261,7 @@ admin/
   scripts/
     verify-admin.mjs   内容格式回归测试（amytis 真实加载器）
     verify-worker.mjs  Worker 端到端测试（打桩 GitHub API）
+    verify-ui.mjs      前端交互测试（happy-dom 驱动真实 DOM）
     dev-mock.mjs       本地假服务器
 ```
 

@@ -883,13 +883,16 @@ async function getSeries(token, slug) {
     const parsed = await readEntry(entry.path, entry.sha, token, `s:${slug}`);
     if (!parsed) return fail(500, "读取系列失败");
 
-    // 哪些文章挂在这个系列下
+    // 哪些文章挂在这个系列下。
+    // 合集的成员写在索引的 items 里，不靠文章的 series 字段，所以不用逐篇扫。
     const members = [];
-    for (const post of tree.posts) {
-        const p = await readEntry(post.path, post.sha, token, `p:${post.dirName}`);
-        if (!p) continue;
-        if (p.data.series === slug) {
-            members.push({ slug: post.slug, title: p.data.title || post.slug, date: p.data.date || post.date });
+    if (parsed.data.type !== "collection") {
+        for (const post of tree.posts) {
+            const p = await readEntry(post.path, post.sha, token, `p:${post.dirName}`);
+            if (!p) continue;
+            if (p.data.series === slug) {
+                members.push({ slug: post.slug, title: p.data.title || post.slug, date: p.data.date || post.date });
+            }
         }
     }
 
@@ -905,12 +908,63 @@ async function getSeries(token, slug) {
     };
 }
 
+/**
+ * 合集成员引用校验。
+ *
+ * amytis 解析合集 items 时，引用不到任何文章会直接抛错，整站构建失败。
+ * 所以保存前必须确认每个引用都还对得上。
+ *
+ * 引用键的形态取决于文章的 series 归属：
+ *   独立文章   → posts/<slug>
+ *   系列内文章 → <series>/<slug>
+ * 所以要读被引用那几篇的 front matter。只读被引用的，不扫全库，
+ * 免得把 GitHub API 请求数打爆（Cloudflare 免费版一次请求最多 50 个子请求）。
+ */
+async function findBadCollectionItems(token, items) {
+    if (!items.length) return [];
+
+    const tree = await getTree(token);
+    const seriesSlugs = new Set(tree.series.map((s) => s.slug));
+
+    // 先算出引用到了哪些 slug
+    const wanted = new Set();
+    for (const item of items) {
+        if (!item.post) continue;
+        const idx = item.post.lastIndexOf("/");
+        wanted.add(idx >= 0 ? item.post.slice(idx + 1) : item.post);
+    }
+
+    // 只读这些文章，拿到它们的 series 归属，拼出所有合法的引用键
+    const keys = new Set();
+    for (const post of tree.posts) {
+        if (!wanted.has(post.slug)) continue;
+        const parsed = await readEntry(post.path, post.sha, token, `p:${post.dirName}`);
+        if (!parsed) continue;
+        const series = parsed.data.series || "";
+        keys.add(post.slug);
+        keys.add(`posts/${post.slug}`);
+        if (series) keys.add(`${series}/${post.slug}`);
+    }
+
+    const bad = [];
+    for (const item of items) {
+        if (item.series) {
+            if (!seriesSlugs.has(item.series)) bad.push(`系列「${item.series}」`);
+            continue;
+        }
+        if (item.post && !keys.has(item.post)) bad.push(`文章「${item.post}」`);
+    }
+    return bad;
+}
+
 async function saveSeries(token, slugFromUrl, input) {
     const slug = String(input.slug || slugFromUrl || "").trim();
     if (!c.isValidSlug(slug)) return fail(400, "slug 只能包含字母、数字和连字符");
 
     const title = String(input.title || "").trim();
     if (!title) return fail(400, "请填写系列标题（amytis 要求 title 必填）");
+
+    const isCollection = input.type === "collection";
 
     const tree = await getTree(token);
     const path = c.seriesIndexPath(slug);
@@ -926,14 +980,26 @@ async function saveSeries(token, slugFromUrl, input) {
         }
     }
 
-    // posts 数组留空：交给 amytis 按文章 front matter 的 series 字段自动收集。
-    // 手写数组一旦引用了不存在的 slug，amytis 会直接构建失败。
-    const data = md.applySeriesMeta(existing.data, { ...input, posts: [] });
+    let data;
+    if (isCollection) {
+        const items = md.normalizeCollectionItems(input.items);
+        // amytis 的 PostSchema 明确规定：合集必须至少有一个成员，
+        // 空合集会让整站构建失败，所以在这里就拦住。
+        if (!items.length) return fail(400, "合集至少要有 1 个成员（amytis 不接受空合集）");
+        const bad = await findBadCollectionItems(token, items);
+        if (bad.length) return fail(400, `合集成员在仓库里找不到：${bad.join("、")}`);
+        data = md.applySeriesMeta(existing.data, { ...input, type: "collection", items });
+    } else {
+        // posts 数组留空：交给 amytis 按文章 front matter 的 series 字段自动收集。
+        // 手写数组一旦引用了不存在的 slug，amytis 会直接构建失败。
+        data = md.applySeriesMeta(existing.data, { ...input, type: "", posts: [] });
+    }
+
     const raw = md.stringify(data, input.content ?? existing.body);
 
     await putFile(path, raw, token, {
         sha,
-        message: `${sha ? "更新" : "新建"}系列：${title}`,
+        message: `${sha ? "更新" : "新建"}${isCollection ? "合集" : "系列"}：${title}`,
     });
 
     invalidate();
@@ -943,7 +1009,9 @@ async function saveSeries(token, slugFromUrl, input) {
         slug,
         path,
         created: !sha,
-        message: sha ? "系列已保存" : "系列已创建",
+        message: sha
+            ? (isCollection ? "合集已保存" : "系列已保存")
+            : (isCollection ? "合集已创建" : "系列已创建"),
         data,
     };
 }
@@ -955,8 +1023,12 @@ async function removeSeries(token, slug) {
 
     const removed = await deleteDir(c.seriesDir(slug), token, `删除系列：${slug}`);
 
-    // 系列没了，挂在下面的文章也要摘掉 series 字段
-    await detachSeriesFromPosts(token, slug).catch((err) => console.error("清理文章关联失败", err));
+    // 系列没了，挂在下面的文章也要摘掉 series 字段。
+    // 合集的成员写在索引里，不动文章的 series 字段，不用清理。
+    const parsed = await readEntry(entry.path, entry.sha, token, `s:${slug}`);
+    if (parsed && parsed.data.type !== "collection") {
+        await detachSeriesFromPosts(token, slug).catch((err) => console.error("清理文章关联失败", err));
+    }
 
     invalidate();
     return { ok: true, removed, message: `系列已删除（连带清理 ${removed} 个文件）` };

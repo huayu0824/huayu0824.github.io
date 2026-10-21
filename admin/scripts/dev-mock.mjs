@@ -101,6 +101,23 @@ put("content/series/with-u-story/index.md", [
     "这个系列记录 WITH-U 的制作过程。",
 ].join("\n"));
 
+// 合集：跟系列同一个文件夹，靠 type: collection 区分
+put("content/series/training-picks/index.md", [
+    "---",
+    'title: "训练精选"',
+    "date: 2026-10-20",
+    'excerpt: "把几篇训练相关的文章挑到一起"',
+    "tags:",
+    "  - 训练",
+    "type: collection",
+    "items:",
+    "  - post: posts/with-u",
+    "  - post: posts/first-post",
+    "---",
+    "",
+    "这个合集把零散的训练文章挑到一起，不改它们各自的系列归属。",
+].join("\n"));
+
 put("content/books/home-gym/index.md", [
     "---",
     'title: "家庭训练手册"',
@@ -147,10 +164,10 @@ function parse(text) {
             data[key] = val.replace(/^["']|["']$/g, "");
         }
     }
-    // 列表型字段（tags / chapters）单独处理
-    // chapters 是对象数组（- title: xx / id: yy），要能把续行并进同一个对象
+    // 列表型字段（tags / chapters / items）单独处理
+    // chapters 与 items 是对象数组（- title: xx / id: yy），要能把续行并进同一个对象
     const lines = m[1].split("\n");
-    for (const key of ["tags", "chapters"]) {
+    for (const key of ["tags", "chapters", "items"]) {
         const start = lines.findIndex((l) => l.startsWith(key + ":"));
         if (start < 0) continue;
         if (lines[start].includes("[]")) continue;
@@ -225,6 +242,9 @@ function summarize(type, entry) {
         featured: data.featured === true,
         series: data.series || "",
         chapterCount: Array.isArray(data.chapters) ? data.chapters.length : 0,
+        // 系列 / 合集是同一种文件夹，靠 type: collection 区分
+        type: data.type === "collection" ? "collection" : "series",
+        items: Array.isArray(data.items) ? data.items : [],
         words: words(body),
     };
 }
@@ -285,9 +305,13 @@ function detailType(type, key) {
         url: TYPES[type].url(key),
     };
     if (type === "series") {
-        out.members = (all.posts || [])
-            .filter((p) => parse(p.text).data.series === key)
-            .map((p) => ({ slug: p.key, title: parse(p.text).data.title || p.key, date: parse(p.text).data.date || "" }));
+        const isCollection = data.type === "collection";
+        out.members = isCollection
+            ? []
+            : (all.posts || [])
+                .filter((p) => parse(p.text).data.series === key)
+                .map((p) => ({ slug: p.key, title: parse(p.text).data.title || p.key, date: parse(p.text).data.date || "" }));
+        out.items = isCollection && Array.isArray(data.items) ? data.items : [];
     }
     if (type === "books") {
         out.chapters = (Array.isArray(data.chapters) ? data.chapters : []).map((ch) => {
@@ -323,7 +347,14 @@ function yamlOf(data) {
                 if (item && typeof item === "object") {
                     const pairs = Object.entries(item);
                     lines.push(`  - ${pairs[0][0]}: ${pairs[0][1]}`);
-                    for (const [ik, iv] of pairs.slice(1)) lines.push(`    ${ik}: ${iv}`);
+                    for (const [ik, iv] of pairs.slice(1)) {
+                        if (Array.isArray(iv)) {
+                            lines.push(`    ${ik}:`);
+                            for (const x of iv) lines.push(`      - ${x}`);
+                        } else {
+                            lines.push(`    ${ik}: ${iv}`);
+                        }
+                    }
                 } else {
                     lines.push(`  - ${item}`);
                 }
@@ -353,7 +384,19 @@ function saveType(type, key, input) {
         if (val === "") continue;
         data[key2] = val;
     }
-    if (type === "series") data.posts = [];
+    if (type === "series") {
+        // 系列：posts 留空，靠文章的 series 字段收集
+        // 合集：type: collection + items 手工挑成员
+        if (input.type === "collection") {
+            data.type = "collection";
+            data.items = Array.isArray(input.items) ? input.items : [];
+            delete data.posts;
+        } else {
+            data.posts = [];
+            delete data.type;
+            delete data.items;
+        }
+    }
     if (type === "books") {
         data.chapters = Array.isArray(input.chapters) ? input.chapters : (data.chapters || []);
         for (const ch of data.chapters) {

@@ -454,6 +454,97 @@ await check("取消关联会移除 series 字段", () => {
     return "series 字段已移除";
 });
 
+/* ------------------------------------------------------------ 合集 */
+
+console.log("\n合集（type: collection）");
+const createCollection = await call("/api/series", {
+    method: "POST",
+    body: {
+        slug: "my-collection",
+        title: "我的合集",
+        date: "2026-10-21",
+        type: "collection",
+        items: [{ post: "posts/with-u" }],
+    },
+});
+await check("新建合集写入 type: collection + items，不写 posts", () => {
+    if (createCollection.status !== 200) throw new Error("status = " + createCollection.status);
+    const text = repo.get("content/series/my-collection/index.md").text;
+    if (!text.includes("type: collection")) throw new Error("type 没写上");
+    if (!text.includes("items:")) throw new Error("items 没写上");
+    if (text.includes("posts:")) throw new Error("合集不该有 posts 字段");
+    return "type/items 已写入";
+});
+
+await check("合集详情返回 type 与 items", async () => {
+    const res = await call("/api/series/my-collection");
+    if (res.status !== 200) throw new Error("status = " + res.status);
+    eq(res.data.type, "collection", "type");
+    eq(res.data.items.length, 1, "成员数");
+    eq(res.data.items[0].post, "posts/with-u", "成员引用键");
+    return "type = collection";
+});
+
+await check("空合集被拒（amytis 不接受，会让整站构建失败）", async () => {
+    const res = await call("/api/series", {
+        method: "POST",
+        body: { slug: "empty-collection", title: "空合集", date: "2026-10-21", type: "collection", items: [] },
+    });
+    if (res.status !== 400) throw new Error("status = " + res.status);
+    return res.data.error;
+});
+
+await check("引用不存在的文章被拒", async () => {
+    const res = await call("/api/series", {
+        method: "POST",
+        body: {
+            slug: "bad-collection", title: "坏合集", date: "2026-10-21",
+            type: "collection", items: [{ post: "posts/does-not-exist" }],
+        },
+    });
+    if (res.status !== 400) throw new Error("status = " + res.status);
+    return res.data.error;
+});
+
+await check("引用不存在的系列被拒", async () => {
+    const res = await call("/api/series", {
+        method: "POST",
+        body: {
+            slug: "bad-collection-2", title: "坏合集2", date: "2026-10-21",
+            type: "collection", items: [{ series: "no-such-series" }],
+        },
+    });
+    if (res.status !== 400) throw new Error("status = " + res.status);
+    return res.data.error;
+});
+
+await check("合集可以整包收编一个存在的系列", async () => {
+    const res = await call("/api/series", {
+        method: "POST",
+        body: {
+            slug: "collection-2", title: "收编合集", date: "2026-10-21",
+            type: "collection", items: [{ series: "my-series", exclude: ["skip-me"] }],
+        },
+    });
+    if (res.status !== 200) throw new Error("status = " + res.status);
+    const text = repo.get("content/series/collection-2/index.md").text;
+    if (!text.includes("series: my-series")) throw new Error("系列引用没写上");
+    return "系列已收编";
+});
+
+await check("从合集切回系列会清掉 type 和 items", async () => {
+    const res = await call("/api/series/my-collection", {
+        method: "PUT",
+        body: { title: "我的合集", date: "2026-10-21", type: "" },
+    });
+    if (res.status !== 200) throw new Error("status = " + res.status);
+    const text = repo.get("content/series/my-collection/index.md").text;
+    if (text.includes("type: collection")) throw new Error("type 没清掉");
+    if (text.includes("items:")) throw new Error("items 没清掉");
+    if (!text.includes("posts: []")) throw new Error("posts 应该留空");
+    return "已切成系列";
+});
+
 /* ------------------------------------------------------------ 历史 */
 
 console.log("\n版本历史");

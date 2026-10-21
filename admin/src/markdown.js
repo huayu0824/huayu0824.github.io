@@ -126,6 +126,7 @@ export function applyNoteMeta(existing, input) {
 /* ---------------------------------------------------------------- 系列字段 */
 
 // 系列索引走 PostSchema，额外支持 posts（手动排序）与 sort
+// 合集（type: collection）则用 items 表达成员，两者是互斥的两种形态
 const SERIES_ORDER = [
     "title",
     "date",
@@ -141,9 +142,52 @@ const SERIES_ORDER = [
     "series",
     "subtitle",
     "redirectFrom",
+    "type",
+    "items",
     "posts",
     "sort",
 ];
+
+/**
+ * 合集成员归一化。
+ *
+ * amytis 的合集用 items 数组表达成员，两种形态：
+ *   { post: "<slug>" | "posts/<slug>" | "<series>/<slug>" }  引用一篇文章
+ *   { series: "<slug>", exclude?: ["<slug>", ...] }        整个系列收进来，可排除其中几篇
+ *
+ * 引用了仓库里不存在的 slug，amytis 构建时会直接抛错让整站挂掉，
+ * 所以这里只做结构清洗，存在性校验交给 saveSeries（要读仓库才知道）。
+ */
+export function normalizeCollectionItems(value) {
+    const list = Array.isArray(value) ? value : [];
+    const out = [];
+
+    for (const item of list) {
+        if (!item) continue;
+
+        if (typeof item === "string") {
+            const ref = item.trim();
+            if (ref) out.push({ post: ref });
+            continue;
+        }
+
+        const series = String(item.series || "").trim();
+        if (series) {
+            const entry = { series };
+            const exclude = Array.isArray(item.exclude)
+                ? item.exclude.map((s) => String(s).trim()).filter(Boolean)
+                : [];
+            if (exclude.length) entry.exclude = exclude;
+            out.push(entry);
+            continue;
+        }
+
+        const post = String(item.post || "").trim();
+        if (post) out.push({ post });
+    }
+
+    return out;
+}
 
 export function applySeriesMeta(existing, input) {
     const out = { ...existing };
@@ -155,12 +199,26 @@ export function applySeriesMeta(existing, input) {
     if (input.coverImage !== undefined) out.coverImage = clean(input.coverImage);
     if (input.featured !== undefined) out.featured = Boolean(input.featured);
     if (input.draft !== undefined) out.draft = Boolean(input.draft);
-    // posts 是系列内文章的 slug 列表，顺序即展示顺序
-    if (input.posts !== undefined) out.posts = toList(input.posts);
     if (input.sort !== undefined) out.sort = input.sort || "date-desc";
 
+    // 类型：系列，还是合集。
+    // 系列靠「文章 front matter 的 series 字段」自动收集成员，索引里的 posts 留空；
+    // 合集靠 items 手工挑选成员，type: collection。
+    // 两者互斥，来回切的时候要把对方留下的字段清干净。
+    if (input.type === "collection") {
+        out.type = "collection";
+        if (input.items !== undefined) out.items = normalizeCollectionItems(input.items);
+        else if (!Array.isArray(out.items)) out.items = [];
+        delete out.posts;
+    } else {
+        delete out.type;
+        delete out.items;
+        // posts 是系列内文章的 slug 列表，顺序即展示顺序
+        if (input.posts !== undefined) out.posts = toList(input.posts);
+        else if (!Array.isArray(out.posts)) out.posts = [];
+    }
+
     if (!Array.isArray(out.tags)) out.tags = [];
-    if (!Array.isArray(out.posts)) out.posts = [];
 
     for (const key of ["excerpt", "coverImage"]) {
         if (out[key] === "") delete out[key];
@@ -312,6 +370,7 @@ export function noteSummary(meta, body) {
 }
 
 export function seriesSummary(meta, body) {
+    const isCollection = meta.type === "collection";
     return {
         title: meta.title || "(无标题)",
         date: meta.date || "",
@@ -320,7 +379,10 @@ export function seriesSummary(meta, body) {
         coverImage: meta.coverImage || "",
         featured: meta.featured === true,
         draft: meta.draft === true,
-        posts: Array.isArray(meta.posts) ? meta.posts : [],
+        // 合集用 items，系列用 posts
+        type: isCollection ? "collection" : "series",
+        items: isCollection && Array.isArray(meta.items) ? meta.items : [],
+        posts: !isCollection && Array.isArray(meta.posts) ? meta.posts : [],
         words: countWords(body),
     };
 }

@@ -23,12 +23,21 @@ const { getAllPosts } = await import("../../src/lib/content/posts.ts");
 const { getAllFlows } = await import("../../src/lib/content/flows.ts");
 const { getAllNotes } = await import("../../src/lib/content/notes.ts");
 const { getAllPages } = await import("../../src/lib/content/posts.ts");
-const { getAllSeries, getSeriesPosts } = await import("../../src/lib/content/series.ts");
+const { getAllSeries, getSeriesPosts, getCollectionPosts } = await import("../../src/lib/content/series.ts");
 const { getAllBooks } = await import("../../src/lib/content/books.ts");
 
-/** 临时文件用完即删，失败也删，绝不在 content/ 里留残骸 */
+/**
+ * 临时文件用完即删，失败也删，绝不在 content/ 里留残骸。
+ *
+ * 但绝不覆盖已存在的文件：随笔的路径是按日期算出来的，
+ * 万一撞上用户真写过的那天，覆盖就等于把人家内容删了——
+ * 这种情况要大声报错，而不是默默吃掉。
+ */
 function writeTemp(relPath, content) {
     const abs = path.join(REPO, relPath);
+    if (fs.existsSync(abs)) {
+        throw new Error(`临时文件路径撞上已有内容，拒绝覆盖：${relPath}`);
+    }
     TEMP.push(abs);
     fs.mkdirSync(path.dirname(abs), { recursive: true });
     fs.writeFileSync(abs, content, "utf8");
@@ -274,6 +283,70 @@ check("系列 posts 数组留空（交给 amytis 自动收集）", () => {
 check("系列索引路径", () =>
     eq(c.seriesIndexPath("my-series"), "content/series/my-series/index.md", "path"));
 
+/* ------------------------------------------------- 合集 front matter */
+
+console.log("\n合集（type: collection）能通过 amytis PostSchema");
+check("新建合集：写 type: collection + items，不写 posts", () => {
+    const data = md.applySeriesMeta({}, {
+        title: "我的合集", date: "2026-10-15", excerpt: "简介", tags: ["合集"],
+        type: "collection",
+        items: [{ post: "posts/some-article" }, { series: "other-series", exclude: ["skip-me"] }],
+    });
+    const result = PostSchema.safeParse(data);
+    if (!result.success) throw new Error(result.error.issues.map((i) => `${i.path}: ${i.message}`).join("; "));
+    eq(data.type, "collection", "type");
+    if ("posts" in data) throw new Error("合集不该有 posts 字段");
+    eq(data.items.length, 2, "成员数");
+    return "type/items 全部接受";
+});
+
+check("合集成员归一化：字符串、对象、exclude 都认", () => {
+    const items = md.normalizeCollectionItems([
+        "posts/plain",
+        { post: "posts/one" },
+        { series: "series-a" },
+        { series: "series-b", exclude: ["x", " y ", ""] },
+        { post: "" },
+        null,
+    ]);
+    eq(items.length, 4, "归一化后条数");
+    eq(items[0].post, "posts/plain", "字符串 → post");
+    eq(items[1].post, "posts/one", "对象 → post");
+    eq(items[2].series, "series-a", "series");
+    eq(JSON.stringify(items[3].exclude), '["x","y"]', "exclude 去空");
+    return "4 条有效成员";
+});
+
+check("从合集切回系列：type 和 items 都被清掉", () => {
+    const before = md.applySeriesMeta({}, {
+        title: "T", type: "collection", items: [{ post: "posts/x" }],
+    });
+    const after = md.applySeriesMeta(before, { title: "T", type: "", posts: [] });
+    if ("type" in after) throw new Error("type 没有被清掉");
+    if ("items" in after) throw new Error("items 没有被清掉");
+    eq(JSON.stringify(after.posts), "[]", "posts");
+    const result = PostSchema.safeParse(after);
+    if (!result.success) throw new Error(result.error.issues.map((i) => `${i.path}: ${i.message}`).join("; "));
+    return "互斥切换干净";
+});
+
+check("空合集会被 amytis 拒绝（后台要提前拦）", () => {
+    const data = md.applySeriesMeta({}, { title: "T", type: "collection", items: [] });
+    const result = PostSchema.safeParse(data);
+    if (result.success) throw new Error("空合集居然通过了校验");
+    if (!/at least one item/i.test(result.error.issues[0].message)) {
+        throw new Error("报错信息不对：" + result.error.issues[0].message);
+    }
+    return "amytis 明确要求至少一个成员";
+});
+
+check("系列带 items 会被 amytis 拒绝（后台要提前拦）", () => {
+    const data = { ...md.applySeriesMeta({}, { title: "T", posts: [] }), items: [{ post: "posts/x" }] };
+    const result = PostSchema.safeParse(data);
+    if (result.success) throw new Error("系列带 items 居然通过了校验");
+    return "items 只能配 type: collection";
+});
+
 /* ------------------------------------------------- 书籍 front matter */
 
 console.log("\n书籍 front matter 能通过 amytis BookSchema");
@@ -356,13 +429,15 @@ writeTemp(c.postPath(c.postDirName("2026-10-15", "admin-verify-post")), md.strin
 ));
 writeTemp("content/posts/2026-10-15-admin-verify-post/images/cover.png", "not-a-real-png-but-exists");
 
-writeTemp(c.flowFlatPath("2026-10-15"), md.stringify(
-    md.applyFlowMeta({}, { date: "2026-10-15", tags: ["校验"], content: "随手一句" }),
+// 随笔的路径由日期算出来，用一个不会撞上真实内容的日期
+// （2019 年，跟站点现有内容差得远）
+writeTemp(c.flowFlatPath("2019-01-02"), md.stringify(
+    md.applyFlowMeta({}, { date: "2019-01-02", tags: ["校验"], content: "随手一句" }),
     "随手一句"
 ));
 
-writeTemp(c.flowFolderPath("2026-10-14"), md.stringify(
-    md.applyFlowMeta({}, { date: "2026-10-14", title: "文件夹形式", tags: [], content: "带图版本" }),
+writeTemp(c.flowFolderPath("2019-01-03"), md.stringify(
+    md.applyFlowMeta({}, { date: "2019-01-03", title: "文件夹形式", tags: [], content: "带图版本" }),
     "带图版本"
 ));
 
@@ -388,6 +463,20 @@ writeTemp(c.seriesIndexPath("admin-verify-series"), md.stringify(
 writeTemp(c.seriesIndexPath("admin-verify-members"), md.stringify(
     md.applySeriesMeta({}, { title: "成员校验系列", date: "2026-10-15", content: "系列正文" }),
     "系列正文"
+));
+
+// 合集：引用一篇独立文章（posts/<slug>）和一篇系列内文章（<series>/<slug>）
+writeTemp(c.seriesIndexPath("admin-verify-collection"), md.stringify(
+    md.applySeriesMeta({}, {
+        title: "校验合集", date: "2026-10-15", excerpt: "简介",
+        type: "collection",
+        items: [
+            { post: "posts/with-u" },
+            { post: "admin-verify-members/admin-verify-member-post" },
+        ],
+        content: "合集正文",
+    }),
+    "合集正文"
 ));
 
 writeTemp(c.postPath(c.postDirName("2026-10-15", "admin-verify-member-post")), md.stringify(
@@ -419,14 +508,14 @@ check("文章文件能被 getAllPosts() 解析", () => {
 });
 
 check("随笔文件能被 getAllFlows() 解析（扁平形式）", () => {
-    const found = getAllFlows().find((f) => f.slug === "2026/10/15");
+    const found = getAllFlows().find((f) => f.slug === "2019/01/02");
     if (!found) throw new Error("getAllFlows() 里找不到刚写入的随笔");
     eq(found.tags[0], "校验", "tags");
     return `slug=${found.slug}`;
 });
 
 check("随笔文件能被 getAllFlows() 解析（文件夹形式）", () => {
-    const found = getAllFlows().find((f) => f.slug === "2026/10/14");
+    const found = getAllFlows().find((f) => f.slug === "2019/01/03");
     if (!found) throw new Error("找不到文件夹形式的随笔");
     eq(found.title, "文件夹形式", "title");
     return `slug=${found.slug}`;
@@ -451,6 +540,23 @@ check("系列索引能被 getAllSeries() 解析", () => {
     const all = getAllSeries();
     if (!all["admin-verify-series"]) throw new Error("getAllSeries() 里找不到刚写入的系列");
     return "系列已注册";
+});
+
+check("合集索引能被 getAllSeries() 解析", () => {
+    const all = getAllSeries();
+    if (!all["admin-verify-collection"]) throw new Error("getAllSeries() 里找不到刚写入的合集");
+    return "合集已注册";
+});
+
+check("合集成员能被 getCollectionPosts() 解析", () => {
+    const posts = getCollectionPosts("admin-verify-collection");
+    if (posts.length !== 2) throw new Error(`成员数不对：${posts.length}`);
+    const slugs = posts.map((p) => p.slug);
+    if (!slugs.includes("with-u")) throw new Error("独立文章（posts/<slug>）没被收进来");
+    if (!slugs.includes("admin-verify-member-post")) {
+        throw new Error("系列内文章（<series>/<slug>）没被收进来");
+    }
+    return "2 个成员";
 });
 
 check("文章写 series 字段后被自动收进系列", () => {
