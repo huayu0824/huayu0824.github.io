@@ -1,11 +1,24 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 140 32" fill="none">
-  <!-- Icon Part -->
-  <g>
-    <path d="M16 4 L7 28" stroke="#059669" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-    <path d="M16 4 L25 28" stroke="#059669" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-    <path d="M11.5 18 H 20.5" stroke="#059669" stroke-width="2" stroke-linecap="round" />
-    <path d="M20.5 18 Q 26 14 26 8 Q 23 12 20.5 18" fill="#059669" />
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 72" width="320" height="72" role="img" aria-label="天道">
+  <title>天道</title>
+
+  <!-- 印：朱砂底 + 白文「天」 -->
+  <g transform="translate(4,12)">
+    <rect width="48" height="48" rx="10" fill="#B03A2E"/>
+    <g stroke="#FAFAF7" stroke-width="3" stroke-linecap="round" fill="none">
+      <path d="M18.6 17.4 L29.7 16.4"/>
+      <path d="M12.9 23.6 L35.4 22.1"/>
+      <path d="M24.2 17 C23.4 21.9 20 27.4 14.5 34.2"/>
+      <path d="M24.2 22.5 C26.1 25.1 29.2 28.9 32.9 32.3"/>
+    </g>
   </g>
-  <!-- Text Part -->
-  <text x="36" y="24" font-family="serif" font-size="22" font-weight="bold" fill="#1c1917" letter-spacing="0.5">Amytis</text>
+
+  <!-- 字标：天道 -->
+  <text x="66" y="44"
+        font-family="'Songti SC','STSong','SimSun','Noto Serif CJK SC','Source Han Serif SC',serif"
+        font-size="34" font-weight="600" letter-spacing="4" fill="#1C1917">天道</text>
+
+  <!-- 落款：花羽 -->
+  <text x="176" y="44"
+        font-family="'KaiTi','STKaiti','Kaiti SC','Songti SC',serif"
+        font-size="19" letter-spacing="3" fill="#B03A2E">花羽</text>
 </svg>

@@ -89,6 +89,8 @@ export const metadata: Metadata = {
   description: resolveLocaleValue(siteConfig.description, DEFAULT_LOCALE),
   icons: {
     icon: faviconMeta,
+    // iOS 主屏图标：自动加圆角遮罩，所以底图要满幅出血、不要自带圆角
+    apple: [{ url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" }],
   },
   ...(feedAlternates && { alternates: feedAlternates }),
   openGraph: {

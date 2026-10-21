@@ -1,9 +1,11 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none" stroke="#059669" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-  <!-- Letter A structure -->
-  <path d="M16 4 L7 28" />
-  <path d="M16 4 L25 28" />
-  <!-- Crossbar / Leaf stem -->
-  <path d="M11.5 18 H 20.5" />
-  <!-- Leaf accent -->
-  <path d="M20.5 18 Q 26 14 26 8 Q 23 12 20.5 18" fill="#059669" stroke="none" />
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32" role="img" aria-label="天道">
+  <title>天道</title>
+  <!-- 朱文方印：朱砂底 + 白文「天」。天字两横微右上挑，取楷体笔势 -->
+  <rect x="0.5" y="0.5" width="31" height="31" rx="6.5" fill="#B03A2E"/>
+  <g stroke="#FAFAF7" stroke-width="2.15" stroke-linecap="round" fill="none">
+    <path d="M12.4 11.6 L19.8 10.9"/>
+    <path d="M8.6 15.7 L23.6 14.9"/>
+    <path d="M16.1 11.3 C15.5 14.6 13.3 18.9 9.7 22.8"/>
+    <path d="M16.1 15.3 C17.6 17.4 20.1 20.6 22.9 23"/>
+  </g>
 </svg>
