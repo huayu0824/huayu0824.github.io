@@ -135,7 +135,7 @@ put("content/books/home-gym/index.md", [
 put("content/books/home-gym/lower-body.md", ["---", 'title: "下肢基础"', "---", "", "深蹲与箭步蹲。"].join("\n"));
 put("content/books/home-gym/upper-body.md", ["---", 'title: "上肢基础"', "---", "", "俯卧撑与划船。"].join("\n"));
 
-put("content/about.md", ["---", 'title: "关于"', "layout: simple", "---", "", "学体育的，现在主要在做硬件和 AI。"].join("\n"));
+put("content/about.md", ["---", 'title: "关于"', "layout: simple", "---", "", "亲手做出来的东西，和做它们时在想什么。"].join("\n"));
 put("content/links.md", ["---", 'title: "友链"', "---", "", "一些有趣的地方。"].join("\n"));
 
 put("content/flows/2026/10/15.md", ["---", "date: 2026-10-15", "---", "", "今天把后台重写了一遍。"].join("\n"));
@@ -146,14 +146,14 @@ put("content/posts/2026-06-23-with-u/images/cover.png", "fake-png");
 /* ------------------------------------------------------- 站点设置（假数据） */
 
 put("site.settings.json", JSON.stringify({
-    title: { zh: "花羽的体育笔记", en: "花羽的体育笔记" },
-    description: { zh: "学体育的，现在主要在做硬件和 AI。", en: "" },
+    title: { zh: "天道", en: "天道" },
+    description: { zh: "一个人怎么长成现在这样。这里记下我想过的、做过的，和一路上变了什么。", en: "" },
     logo: { src: "/images/avatar.png", favicon: "/icon.svg" },
     ogImage: "/og-image.png",
     hero: {
-        tagline: { zh: "花羽的体育笔记", en: "" },
-        title: { zh: "在传统的底色上，画一点未来的东西。", en: "" },
-        subtitle: { zh: "体育教育出身，现在主要在做硬件和 AI。", en: "" },
+        tagline: { zh: "天道", en: "" },
+        title: { zh: "一个人怎么长成现在这样。", en: "" },
+        subtitle: { zh: "这里记下我想过的、做过的，和一路上变了什么。", en: "" },
     },
     features: {
         posts: { enabled: true, name: { zh: "文章", en: "Posts" } },
@@ -190,7 +190,7 @@ put("site.settings.json", JSON.stringify({
         builtWith: { show: true, url: "https://github.com/hutusi/amytis", text: "Built with Amytis" },
         bottomLinks: [],
     },
-    footerText: { zh: "© 2026 花羽的体育笔记", en: "© 2026 花羽的体育笔记" },
+    footerText: { zh: "© 2026 天道 · 花羽", en: "© 2026 天道 · 花羽" },
     social: {
         github: "https://github.com/huayu0824",
         twitter: "https://twitter.com/Blue_Jingling",

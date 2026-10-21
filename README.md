@@ -1,6 +1,12 @@
-# 花羽的体育笔记
+# 天道
 
-基于 [Amytis](https://github.com/hutusi/amytis)（Next.js 16 + Bun + Tailwind v4）构建的数字花园，部署在 GitHub Pages。
+> 神即道，道即规律，如来。—— 豆豆《遥远的救世主》
+
+花羽的成长记录。记下我想过的、做过的，和一路上变了什么——随笔、笔记、拆开又装回去的东西，都在这。
+
+站名取自《遥远的救世主》——不靠救世主，靠规律。
+
+基于 [Amytis](https://github.com/hutusi/amytis)（Next.js 16 + Bun + Tailwind v4）构建，部署在 GitHub Pages。
 
 线上地址：<https://huayu0824.github.io>
 

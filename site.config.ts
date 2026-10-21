@@ -1,5 +1,5 @@
 /**
- * 花羽的体育笔记 —— Amytis 站点配置
+ * 天道 —— Amytis 站点配置
  *
  * 注意：i18n 开启后，可本地化字段（title / description / hero / features.*.name）
  * 必须是 { <locale>: string } 映射，写成纯字符串会导致 TypeScript 编译失败。
@@ -62,19 +62,19 @@ function mergeSettings<T>(base: T, override: unknown): T {
 const baseConfig = {
 
     // ── 站点标识 ──────────────────────────────────────────────────────────────
-    title: { zh: "花羽的体育笔记", en: "花羽的体育笔记" },
+    title: { zh: "天道", en: "天道" },
     logo: {
         src: "/images/avatar.png",
         favicon: "/icon.svg",
     },
     description: {
-        zh: "学体育的，现在主要在做硬件和 AI。记录身体、流动与时间，也记录那些我拆开又装回去的东西。",
-        en: "学体育的，现在主要在做硬件和 AI。",
+        zh: "一个人怎么长成现在这样。这里记下我想过的、做过的，和一路上变了什么。",
+        en: "How a person grows into what they are. What I thought, what I made, and what changed along the way.",
     },
     baseUrl: "https://huayu0824.github.io",
     // TODO：换成 1200×630 的分享图，放到 public/og-image.png
     ogImage: "/og-image.png",
-    footerText: { zh: `© ${new Date().getFullYear()} 花羽的体育笔记`, en: `© ${new Date().getFullYear()} 花羽的体育笔记` },
+    footerText: { zh: `© ${new Date().getFullYear()} 天道 · 花羽`, en: `© ${new Date().getFullYear()} 天道 · 花羽` },
 
     // ── 多语言 ────────────────────────────────────────────────────────────────
     // 只保留 zh。默认语言的内容直接放在 content/ 根目录，URL 不带前缀。
@@ -177,14 +177,14 @@ const baseConfig = {
 
     // ── 首页 Hero ─────────────────────────────────────────────────────────────
     hero: {
-        tagline: { zh: "花羽的体育笔记", en: "花羽的体育笔记" },
+        tagline: { zh: "天道", en: "天道" },
         title: {
-            zh: "在传统的底色上，画一点未来的东西。",
-            en: "在传统的底色上，画一点未来的东西。",
+            zh: "一个人怎么长成现在这样。",
+            en: "How a person grows into what they are.",
         },
         subtitle: {
-            zh: "体育教育出身，现在主要在做硬件和 AI。这里记录身体、流动与时间，也记录那些我拆开又装回去的东西。",
-            en: "体育教育出身，现在主要在做硬件和 AI。",
+            zh: "这里记下我想过的、做过的，和一路上变了什么——随笔、笔记，还有拆开又装回去的东西。",
+            en: "What I thought, what I made, and what changed along the way — jottings, notes, and things taken apart and put back together.",
         },
     },
 
@@ -292,7 +292,7 @@ const baseConfig = {
     // ── 作者 ──────────────────────────────────────────────────────────────────
     authors: {
         "花羽": {
-            bio: "体育教育 · 武术专项。训练场之外在做硬件和 AI。",
+            bio: "在做东西，也在长大。",
             avatar: "/images/avatar.png",
             social: [],
         },

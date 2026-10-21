@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "description": "花羽的体育笔记 - 博客后台（GitHub 登录 + Markdown 写作 + 提交到仓库触发自动部署）",
+  "description": "天道 - 博客后台（GitHub 登录 + Markdown 写作 + 提交到仓库触发自动部署）",
   "scripts": {
     "dev": "wrangler dev",
     "deploy": "wrangler deploy",

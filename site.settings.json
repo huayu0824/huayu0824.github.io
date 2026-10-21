@@ -1,11 +1,11 @@
 {
   "title": {
-    "zh": "花羽的体育笔记",
-    "en": "花羽的体育笔记"
+    "zh": "天道",
+    "en": "天道"
   },
   "description": {
-    "zh": "学体育的，现在主要在做硬件和 AI。记录身体、流动与时间，也记录那些我拆开又装回去的东西。",
-    "en": "学体育的，现在主要在做硬件和 AI。"
+    "zh": "一个人怎么长成现在这样。这里记下我想过的、做过的，和一路上变了什么。",
+    "en": "How a person grows into what they are. What I thought, what I made, and what changed along the way."
   },
   "logo": {
     "src": "/images/avatar.png",
@@ -14,16 +14,16 @@
   "ogImage": "/og-image.png",
   "hero": {
     "tagline": {
-      "zh": "花羽的体育笔记",
-      "en": "花羽的体育笔记"
+      "zh": "天道",
+      "en": "天道"
     },
     "title": {
-      "zh": "在传统的底色上，画一点未来的东西。",
-      "en": "在传统的底色上，画一点未来的东西。"
+      "zh": "一个人怎么长成现在这样。",
+      "en": "How a person grows into what they are."
     },
     "subtitle": {
-      "zh": "体育教育出身，现在主要在做硬件和 AI。这里记录身体、流动与时间，也记录那些我拆开又装回去的东西。",
-      "en": "体育教育出身，现在主要在做硬件和 AI。"
+      "zh": "这里记下我想过的、做过的，和一路上变了什么——随笔、笔记，还有拆开又装回去的东西。",
+      "en": "What I thought, what I made, and what changed along the way — jottings, notes, and things taken apart and put back together."
     }
   },
   "features": {
@@ -227,8 +227,8 @@
     "bottomLinks": []
   },
   "footerText": {
-    "zh": "© 2026 花羽的体育笔记",
-    "en": "© 2026 花羽的体育笔记"
+    "zh": "© 2026 天道 · 花羽",
+    "en": "© 2026 天道 · 花羽"
   },
   "social": {
     "github": "https://github.com/huayu0824",
