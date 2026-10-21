@@ -8,7 +8,9 @@
     "dev": "wrangler dev",
     "deploy": "wrangler deploy",
     "tail": "wrangler tail",
-    "verify": "bun run scripts/verify-admin.mjs"
+    "verify": "bun run scripts/verify-admin.mjs",
+    "verify:worker": "bun run scripts/verify-worker.mjs",
+    "mock": "bun run scripts/dev-mock.mjs"
   },
   "dependencies": {
     "yaml": "^2.5.1"

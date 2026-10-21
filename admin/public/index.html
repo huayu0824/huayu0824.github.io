@@ -2,7 +2,7 @@
 <html lang="zh">
 <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <title>博客后台 · 花羽的体育笔记</title>
     <link rel="stylesheet" href="app.css">
     <script>
@@ -12,6 +12,11 @@
             var dark = saved === 'dark' ||
                 (saved !== 'light' && window.matchMedia('(prefers-color-scheme: dark)').matches);
             document.documentElement.dataset.scheme = dark ? 'dark' : 'light';
+
+            // 布局偏好：split（分栏）/ edit（只编辑）/ preview（只预览）
+            var layout = null;
+            try { layout = localStorage.getItem('hd-layout'); } catch (e) {}
+            document.documentElement.dataset.layout = layout || 'split';
         })();
     </script>
 </head>
@@ -32,10 +37,24 @@
 
     <header class="topbar">
         <div class="topbar-left">
+            <button class="icon-btn nav-toggle" id="navToggle" type="button" aria-label="显示列表">
+                <svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"></path></svg>
+            </button>
             <strong>博客后台</strong>
             <span class="repo" id="repoInfo"></span>
         </div>
         <div class="topbar-right">
+            <div class="seg" role="group" aria-label="编辑区布局">
+                <button class="seg-btn" data-layout="edit" type="button" title="只编辑">✎</button>
+                <button class="seg-btn" data-layout="split" type="button" title="分栏">▥</button>
+                <button class="seg-btn" data-layout="preview" type="button" title="只预览">◉</button>
+            </div>
+            <button class="icon-btn" id="focusBtn" type="button" aria-label="专注模式" title="专注模式">
+                <svg viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"></path></svg>
+            </button>
+            <button class="icon-btn" id="keysBtn" type="button" aria-label="快捷键" title="快捷键">
+                <svg viewBox="0 0 24 24"><rect x="2.5" y="6" width="19" height="12" rx="2"></rect><path d="M6 10h.01M10 10h.01M14 10h.01M18 10h.01M8 14h8"></path></svg>
+            </button>
             <button class="icon-btn" id="schemeBtn" type="button" aria-label="切换明暗"></button>
             <img class="avatar" id="avatar" alt="">
             <span class="who" id="who"></span>
@@ -45,16 +64,35 @@
 
     <div class="body">
 
+        <!-- 隐藏的文件选择器：封面与正文图片都走它 -->
+        <input type="file" id="coverFile" accept="image/*" hidden>
+
         <!-- 左侧列表 -->
-        <aside class="sidebar">
-            <div class="tabs" role="tablist">
-                <button class="tab is-active" data-mode="posts" type="button" role="tab">文章</button>
-                <button class="tab" data-mode="flows" type="button" role="tab">随笔</button>
+        <aside class="sidebar" id="sidebar">
+            <div class="tabs" id="tabs" role="tablist"></div>
+
+            <div class="side-actions">
+                <button class="btn-primary block" id="newBtn">＋ 新建文章</button>
+                <button class="btn-ghost" id="batchBtn" type="button" title="批量选择">多选</button>
+                <button class="btn-ghost" id="imageLibBtn" type="button" title="图片库">图片</button>
             </div>
 
-            <button class="btn-primary block" id="newBtn">＋ 新建文章</button>
+            <div class="filter-row">
+                <input class="filter" id="filter" type="search" placeholder="筛选标题 / 标签…" autocomplete="off">
+                <select class="sort" id="sort" aria-label="排序方式">
+                    <option value="date-desc">最新在前</option>
+                    <option value="date-asc">最早在前</option>
+                    <option value="words-desc">字数最多</option>
+                    <option value="title-asc">标题 A→Z</option>
+                </select>
+            </div>
 
-            <input class="filter" id="filter" type="search" placeholder="筛选标题 / 标签…" autocomplete="off">
+            <div class="list-tools" id="listTools" hidden>
+                <span class="list-tools-count" id="batchCount">已选 0 项</span>
+                <button class="btn-link" id="batchDraft" type="button">批量转草稿</button>
+                <button class="btn-link danger" id="batchDelete" type="button">批量删除</button>
+                <button class="btn-link" id="batchCancel" type="button">退出多选</button>
+            </div>
 
             <div class="list" id="list"></div>
 
@@ -77,73 +115,53 @@
                     <input class="title-input" id="fTitle" placeholder="文章标题" autocomplete="off">
                     <div class="editor-actions">
                         <label class="check"><input type="checkbox" id="fDraft"><span>草稿</span></label>
-                        <label class="check" data-only="posts"><input type="checkbox" id="fFeatured"><span>精选</span></label>
+                        <label class="check" data-flag="featured"><input type="checkbox" id="fFeatured"><span>精选</span></label>
                         <button class="btn-primary" type="submit" id="saveBtn">保存</button>
                     </div>
                 </div>
 
-                <div class="meta-grid">
-                    <!-- 文章模式 -->
-                    <label class="field" data-only="posts">
-                        <span>网址别名 slug</span>
-                        <input id="fSlug" placeholder="my-post" autocomplete="off">
-                    </label>
+                <div class="meta-grid" id="metaGrid"></div>
 
-                    <label class="field" data-only="flows">
-                        <span>日期</span>
-                        <input id="fFlowDate" type="date">
-                    </label>
-
-                    <label class="field" data-only="posts">
-                        <span>发布日期</span>
-                        <input id="fDate" type="date">
-                    </label>
-
-                    <label class="field" data-only="posts">
-                        <span>分类</span>
-                        <input id="fCategory" placeholder="项目" autocomplete="off">
-                    </label>
-
-                    <label class="field">
-                        <span>标签（逗号分隔）</span>
-                        <input id="fTags" placeholder="ESP32, AI" autocomplete="off">
-                    </label>
-
-                    <label class="field" data-only="posts">
-                        <span>旧网址跳转（逗号分隔，不带结尾斜杠）</span>
-                        <input id="fRedirect" placeholder="/p/old-slug" autocomplete="off">
-                    </label>
-                </div>
-
-                <label class="field" data-only="posts">
-                    <span>摘要</span>
-                    <textarea id="fExcerpt" rows="2" placeholder="列表页和首页卡片上显示的一句话"></textarea>
-                </label>
-
-                <label class="field" data-only="posts">
-                    <span>封面图</span>
-                    <div class="cover-row">
-                        <input id="fCover" placeholder="留空则用自动生成的文字封面" autocomplete="off">
-                        <button class="btn-ghost" type="button" id="coverPick">上传</button>
-                        <input type="file" id="coverFile" accept="image/*" hidden>
-                    </div>
-                </label>
+                <!-- 系列成员 / 书籍章节等专用面板 -->
+                <div class="special-panel" id="specialPanel" hidden></div>
 
                 <div class="editor-main" id="editorMain">
-                    <div class="pane">
+                    <div class="pane pane-edit">
                         <div class="pane-head">
                             <span>正文 Markdown</span>
-                            <span class="pane-hint">可直接粘贴图片</span>
+                            <span class="pane-hint" id="paneHint">可直接粘贴图片</span>
                         </div>
+
+                        <div class="toolbar" id="toolbar">
+                            <button class="tb-btn" data-md="h2" type="button" title="二级标题">H2</button>
+                            <button class="tb-btn" data-md="h3" type="button" title="三级标题">H3</button>
+                            <span class="tb-sep"></span>
+                            <button class="tb-btn" data-md="bold" type="button" title="加粗 (Ctrl+B)"><b>B</b></button>
+                            <button class="tb-btn" data-md="italic" type="button" title="斜体 (Ctrl+I)"><i>I</i></button>
+                            <button class="tb-btn" data-md="strike" type="button" title="删除线"><s>S</s></button>
+                            <button class="tb-btn" data-md="code" type="button" title="行内代码">&lt;/&gt;</button>
+                            <span class="tb-sep"></span>
+                            <button class="tb-btn" data-md="ul" type="button" title="无序列表">•≡</button>
+                            <button class="tb-btn" data-md="ol" type="button" title="有序列表">1.</button>
+                            <button class="tb-btn" data-md="quote" type="button" title="引用">❝</button>
+                            <button class="tb-btn" data-md="codeblock" type="button" title="代码块">▤</button>
+                            <span class="tb-sep"></span>
+                            <button class="tb-btn" data-md="link" type="button" title="链接">🔗</button>
+                            <button class="tb-btn" data-md="image" type="button" title="插入图片">🖼</button>
+                            <button class="tb-btn" data-md="wikilink" type="button" title="插入双链 [[]]">[[ ]]</button>
+                            <span class="tb-sep"></span>
+                            <button class="tb-btn tb-danger" id="clearMd" type="button" title="清空正文">✕</button>
+                        </div>
+
                         <textarea id="fContent" class="content-input" spellcheck="false"
                                   placeholder="## 小标题&#10;&#10;正文…"></textarea>
                     </div>
 
-                    <div class="pane">
+                    <div class="pane pane-preview">
                         <div class="pane-head">
                             <span>预览</span>
                             <div class="pane-tools">
-                                <button class="btn-link" type="button" id="previewToggle">编辑优先</button>
+                                <span class="pane-hint" id="statLine"></span>
                             </div>
                         </div>
                         <div class="preview prose" id="preview"></div>
@@ -154,9 +172,78 @@
                     <button class="btn-danger" type="button" id="deleteBtn">删除</button>
                     <span class="save-state" id="saveState"></span>
                     <a class="link" id="viewLink" href="#" target="_blank" rel="noopener">线上页面 ↗</a>
+                    <button class="btn-link" id="historyBtn" type="button">版本历史</button>
                 </div>
             </form>
         </section>
+
+        <!-- 版本历史抽屉 -->
+        <aside class="drawer" id="historyDrawer" hidden>
+            <div class="drawer-head">
+                <strong>版本历史</strong>
+                <button class="icon-btn" id="historyClose" type="button" aria-label="关闭">
+                    <svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"></path></svg>
+                </button>
+            </div>
+            <div class="drawer-body" id="historyList"></div>
+        </aside>
+    </div>
+
+    <!-- 移动端底部标签栏 -->
+    <nav class="mobile-bar" id="mobileBar" hidden>
+        <button class="mb-btn" data-mobile="list" type="button">
+            <svg viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13M3.5 6h.01M3.5 12h.01M3.5 18h.01"></path></svg>
+            <span>列表</span>
+        </button>
+        <button class="mb-btn" data-mobile="edit" type="button">
+            <svg viewBox="0 0 24 24"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"></path></svg>
+            <span>编辑</span>
+        </button>
+        <button class="mb-btn" data-mobile="save" type="button">
+            <svg viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><path d="M17 21v-8H7v8M7 3v5h8"></path></svg>
+            <span>保存</span>
+        </button>
+    </nav>
+</div>
+
+<!-- ------------------------------------------------------------- 双链补全 -->
+<div class="autocomplete" id="wikilinkPopup" hidden></div>
+
+<!-- ------------------------------------------------------------- 图片库 -->
+<div class="modal" id="imageModal" hidden>
+    <div class="modal-card">
+        <div class="modal-head">
+            <strong>图片库</strong>
+            <button class="icon-btn" id="imageClose" type="button" aria-label="关闭">
+                <svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"></path></svg>
+            </button>
+        </div>
+        <div class="modal-body" id="imageGrid"></div>
+    </div>
+</div>
+
+<!-- ------------------------------------------------------------- 快捷键 -->
+<div class="modal" id="keysModal" hidden>
+    <div class="modal-card">
+        <div class="modal-head">
+            <strong>快捷键</strong>
+            <button class="icon-btn" id="keysClose" type="button" aria-label="关闭">
+                <svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"></path></svg>
+            </button>
+        </div>
+        <div class="modal-body">
+            <dl class="keys">
+                <dt><kbd>Ctrl</kbd>+<kbd>S</kbd></dt><dd>保存</dd>
+                <dt><kbd>Ctrl</kbd>+<kbd>B</kbd></dt><dd>加粗</dd>
+                <dt><kbd>Ctrl</kbd>+<kbd>I</kbd></dt><dd>斜体</dd>
+                <dt><kbd>Ctrl</kbd>+<kbd>K</kbd></dt><dd>插入链接</dd>
+                <dt><kbd>Ctrl</kbd>+<kbd>N</kbd></dt><dd>新建</dd>
+                <dt><kbd>Ctrl</kbd>+<kbd>F</kbd></dt><dd>聚焦筛选框</dd>
+                <dt><kbd>Ctrl</kbd>+<kbd>\</kbd></dt><dd>切换分栏 / 单栏</dd>
+                <dt><kbd>Esc</kbd></dt><dd>关闭弹层 / 取消多选</dd>
+                <dt><kbd>↑</kbd>/<kbd>↓</kbd></dt><dd>列表上下切换</dd>
+            </dl>
+        </div>
     </div>
 </div>
 

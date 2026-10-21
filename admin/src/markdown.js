@@ -100,6 +100,177 @@ export function applyFlowMeta(existing, input) {
     return orderKeys(out, FLOW_ORDER);
 }
 
+/* ---------------------------------------------------------------- 笔记字段 */
+
+// amytis 的 NoteSchema：title 必填，其余可选
+const NOTE_ORDER = ["title", "date", "tags", "draft", "aliases", "toc", "backlinks", "commentable"];
+
+export function applyNoteMeta(existing, input) {
+    const out = { ...existing };
+
+    if (input.title !== undefined) out.title = clean(input.title, "未命名笔记");
+    if (input.date !== undefined) out.date = clean(input.date);
+    if (input.tags !== undefined) out.tags = toList(input.tags);
+    if (input.draft !== undefined) out.draft = Boolean(input.draft);
+    if (input.aliases !== undefined) out.aliases = toList(input.aliases);
+    if (input.toc !== undefined) out.toc = Boolean(input.toc);
+    if (input.backlinks !== undefined) out.backlinks = Boolean(input.backlinks);
+
+    if (!Array.isArray(out.tags)) out.tags = [];
+    if (!Array.isArray(out.aliases)) out.aliases = [];
+    if (out.date === "") delete out.date;
+
+    return orderKeys(out, NOTE_ORDER);
+}
+
+/* ---------------------------------------------------------------- 系列字段 */
+
+// 系列索引走 PostSchema，额外支持 posts（手动排序）与 sort
+const SERIES_ORDER = [
+    "title",
+    "date",
+    "excerpt",
+    "category",
+    "tags",
+    "authors",
+    "coverImage",
+    "featured",
+    "draft",
+    "toc",
+    "commentable",
+    "series",
+    "subtitle",
+    "redirectFrom",
+    "posts",
+    "sort",
+];
+
+export function applySeriesMeta(existing, input) {
+    const out = { ...existing };
+
+    if (input.title !== undefined) out.title = clean(input.title, "未命名系列");
+    if (input.date !== undefined) out.date = clean(input.date);
+    if (input.excerpt !== undefined) out.excerpt = clean(input.excerpt);
+    if (input.tags !== undefined) out.tags = toList(input.tags);
+    if (input.coverImage !== undefined) out.coverImage = clean(input.coverImage);
+    if (input.featured !== undefined) out.featured = Boolean(input.featured);
+    if (input.draft !== undefined) out.draft = Boolean(input.draft);
+    // posts 是系列内文章的 slug 列表，顺序即展示顺序
+    if (input.posts !== undefined) out.posts = toList(input.posts);
+    if (input.sort !== undefined) out.sort = input.sort || "date-desc";
+
+    if (!Array.isArray(out.tags)) out.tags = [];
+    if (!Array.isArray(out.posts)) out.posts = [];
+
+    for (const key of ["excerpt", "coverImage"]) {
+        if (out[key] === "") delete out[key];
+    }
+
+    return orderKeys(out, SERIES_ORDER);
+}
+
+/* ---------------------------------------------------------------- 书籍字段 */
+
+// amytis 的 BookSchema：title / date / chapters 三个都必填
+const BOOK_ORDER = [
+    "title",
+    "date",
+    "excerpt",
+    "authors",
+    "coverImage",
+    "featured",
+    "draft",
+    "latex",
+    "showChapterExcerpt",
+    "chapters",
+];
+
+export function applyBookMeta(existing, input) {
+    const out = { ...existing };
+
+    if (input.title !== undefined) out.title = clean(input.title, "未命名书籍");
+    if (input.date !== undefined) out.date = clean(input.date);
+    if (input.excerpt !== undefined) out.excerpt = clean(input.excerpt);
+    if (input.coverImage !== undefined) out.coverImage = clean(input.coverImage);
+    if (input.featured !== undefined) out.featured = Boolean(input.featured);
+    if (input.draft !== undefined) out.draft = Boolean(input.draft);
+    if (input.showChapterExcerpt !== undefined) out.showChapterExcerpt = Boolean(input.showChapterExcerpt);
+
+    // chapters 必须是数组，且每一项都要有 id
+    if (input.chapters !== undefined) {
+        out.chapters = normalizeChapters(input.chapters);
+    }
+    if (!Array.isArray(out.chapters)) out.chapters = [];
+
+    for (const key of ["excerpt", "coverImage"]) {
+        if (out[key] === "") delete out[key];
+    }
+
+    return orderKeys(out, BOOK_ORDER);
+}
+
+/**
+ * 章节表归一化。
+ * amytis 接受三种形态：{ title, id }、{ part, chapters: [...] }、{ section, items: [...] }。
+ * 后台只产出最简单的一种，避免嵌套层级带来的麻烦。
+ */
+export function normalizeChapters(value) {
+    const list = Array.isArray(value) ? value : [];
+    const out = [];
+    for (const item of list) {
+        if (!item) continue;
+        if (typeof item === "string") {
+            const id = item.trim();
+            if (id) out.push({ title: id, id });
+            continue;
+        }
+        const id = String(item.id || "").trim();
+        if (!id) continue; // 没有 id 的章节会让 amytis 找不到文件
+        out.push({ title: String(item.title || id).trim(), id });
+    }
+    return out;
+}
+
+/* ---------------------------------------------------------------- 页面字段 */
+
+// 顶层页面复用 PostSchema
+const PAGE_ORDER = [
+    "title",
+    "date",
+    "excerpt",
+    "category",
+    "tags",
+    "authors",
+    "coverImage",
+    "featured",
+    "draft",
+    "toc",
+    "commentable",
+    "layout",
+    "subtitle",
+    "redirectFrom",
+];
+
+export function applyPageMeta(existing, input) {
+    const out = { ...existing };
+
+    if (input.title !== undefined) out.title = clean(input.title, "未命名页面");
+    if (input.date !== undefined) out.date = clean(input.date);
+    if (input.excerpt !== undefined) out.excerpt = clean(input.excerpt);
+    if (input.tags !== undefined) out.tags = toList(input.tags);
+    if (input.coverImage !== undefined) out.coverImage = clean(input.coverImage);
+    if (input.draft !== undefined) out.draft = Boolean(input.draft);
+    if (input.layout !== undefined) out.layout = clean(input.layout, "post");
+
+    if (!Array.isArray(out.tags)) out.tags = [];
+
+    for (const key of ["excerpt", "coverImage"]) {
+        if (out[key] === "") delete out[key];
+    }
+
+    return orderKeys(out, PAGE_ORDER);
+}
+
 /* -------------------------------------------------------------- 列表投影 */
 
 export function postSummary(meta, body) {
@@ -126,6 +297,57 @@ export function flowSummary(meta, body) {
         draft: meta.draft === true,
         words: countWords(body),
         preview: firstParagraph(body),
+    };
+}
+
+export function noteSummary(meta, body) {
+    return {
+        title: meta.title || "(无标题)",
+        date: meta.date || "",
+        tags: Array.isArray(meta.tags) ? meta.tags : [],
+        draft: meta.draft === true,
+        words: countWords(body),
+        preview: firstParagraph(body),
+    };
+}
+
+export function seriesSummary(meta, body) {
+    return {
+        title: meta.title || "(无标题)",
+        date: meta.date || "",
+        excerpt: meta.excerpt || firstParagraph(body),
+        tags: Array.isArray(meta.tags) ? meta.tags : [],
+        coverImage: meta.coverImage || "",
+        featured: meta.featured === true,
+        draft: meta.draft === true,
+        posts: Array.isArray(meta.posts) ? meta.posts : [],
+        words: countWords(body),
+    };
+}
+
+export function bookSummary(meta, body) {
+    const chapters = Array.isArray(meta.chapters) ? meta.chapters : [];
+    return {
+        title: meta.title || "(无标题)",
+        date: meta.date || "",
+        excerpt: meta.excerpt || firstParagraph(body),
+        tags: Array.isArray(meta.tags) ? meta.tags : [],
+        coverImage: meta.coverImage || "",
+        featured: meta.featured === true,
+        draft: meta.draft === true,
+        chapterCount: chapters.length,
+        words: countWords(body),
+    };
+}
+
+export function pageSummary(meta, body) {
+    return {
+        title: meta.title || meta.name || "(无标题)",
+        date: meta.date || "",
+        excerpt: meta.excerpt || firstParagraph(body),
+        tags: Array.isArray(meta.tags) ? meta.tags : [],
+        draft: meta.draft === true,
+        words: countWords(body),
     };
 }
 

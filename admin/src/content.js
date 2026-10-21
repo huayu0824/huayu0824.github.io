@@ -5,8 +5,19 @@
  *   文章  content/posts/<YYYY-MM-DD-slug>/index.md   → /posts/<slug>/
  *   随笔  content/flows/<YYYY>/<MM>/<DD>.md          → /flows/<YYYY>/<MM>/<DD>/
  *   随笔（带图）content/flows/<YYYY>/<MM>/<DD>/index.md + images/
+ *   笔记  content/notes/<slug>.md                    → /notes/<slug>
+ *   系列  content/series/<slug>/index.md             → /series/<slug>
+ *   书籍  content/books/<slug>/index.md              → /books/<slug>
+ *   页面  content/<name>.md                          → /<name>
  *
  * 文章目录名必须带日期前缀，否则 amytis 拿不到日期、排序会乱。
+ *
+ * amytis 的硬约束（违反会构建失败或内容静默丢失）：
+ *   · notes 必须是扁平单文件，写成子目录会被静默忽略
+ *   · series 目录里必须恰好一个索引文件（index.md / README.md）
+ *   · books 的 front matter 必须同时有 title、date、chapters
+ *   · posts / notes / series 索引 / pages 的 title 都是必填
+ *   · slug 全树唯一，notes 的 aliases 也参与唯一性检查
  */
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
@@ -79,42 +90,146 @@ export function flowToDate(path) {
     return m ? `${m[1]}-${m[2]}-${m[3]}` : null;
 }
 
+/* ------------------------------------------------------------------- 笔记 */
+
+/**
+ * 笔记是扁平单文件：content/notes/<slug>.md
+ * amytis 只读 notes 目录下的文件，子目录会被静默忽略，所以不能写 notes/<slug>/index.md。
+ */
+export function notePath(slug) {
+    return `content/notes/${slug}.md`;
+}
+
+/* ------------------------------------------------------------------- 系列 */
+
+/**
+ * 系列是一个目录，里面必须恰好一个索引文件。
+ * amytis 认的索引文件名：index.mdx / index.md / README.mdx / README.md
+ * （同格式出现多个、或 md 与 rst 并存，都会构建失败）
+ */
+export const SERIES_INDEX_NAMES = ["index.md", "README.md", "index.mdx", "README.mdx"];
+
+export function seriesDir(slug) {
+    return `content/series/${slug}`;
+}
+
+export function seriesIndexPath(slug) {
+    return `${seriesDir(slug)}/index.md`;
+}
+
+/** 系列内的文章文件：同目录下平铺的 <name>.md */
+export function seriesPostPath(slug, postSlug) {
+    return `${seriesDir(slug)}/${postSlug}.md`;
+}
+
+/* ------------------------------------------------------------------- 书籍 */
+
+/** 书籍索引：content/books/<slug>/index.md */
+export function bookDir(slug) {
+    return `content/books/${slug}`;
+}
+
+export function bookIndexPath(slug) {
+    return `${bookDir(slug)}/index.md`;
+}
+
+/**
+ * 章节文件。amytis 认 6 种形态，这里统一用 <id>.md 的平铺形式，
+ * id 可以带 / 表示多级（如 maths/linear）。
+ */
+export function bookChapterPath(slug, id) {
+    return `${bookDir(slug)}/${id}.md`;
+}
+
+/* ------------------------------------------------------------------- 页面 */
+
+/**
+ * 顶层页面：content/<name>.md，对应线上 /<name>
+ * 只能放在 content 根目录，放进子目录不会被 getAllPages() 读到。
+ */
+export function pagePath(name) {
+    return `content/${name}.md`;
+}
+
 /* ------------------------------------------------------------- 目录树解析 */
 
 /**
- * 从 GitHub git tree 的路径列表里抽出文章与随笔。
+ * 从 GitHub git tree 的路径列表里抽出各类型内容。
  * 一次请求拿到全量路径，比逐个目录 N+1 次请求快得多。
  */
 export function parseTreePaths(paths) {
     const posts = [];
     const flows = [];
+    const notes = [];
+    const series = [];
+    const books = [];
+    const pages = [];
+    const images = [];
+
+    // content/ 下已知的子目录，根级页面要排除它们
+    const RESERVED_DIRS = ["posts", "flows", "notes", "series", "books"];
 
     for (const entry of paths) {
         if (entry.type !== "blob") continue;
+        const path = entry.path;
+
+        // 图片：文章/随笔目录下的 images/，以及 public/uploads/
+        if (/\/images\/[^/]+$/.test(path) || /^public\/uploads\/[^/]+$/.test(path)) {
+            images.push({ path, sha: entry.sha, name: path.split("/").pop() });
+            continue;
+        }
 
         // content/posts/<dir>/index.md
-        const pm = entry.path.match(/^content\/posts\/([^/]+)\/index\.md$/);
+        const pm = path.match(/^content\/posts\/([^/]+)\/index\.md$/);
         if (pm) {
             const parsed = parsePostDirName(pm[1]);
             posts.push({
                 slug: parsed.slug,
                 dirName: pm[1],
                 date: parsed.date,
-                path: entry.path,
+                path,
                 sha: entry.sha,
             });
             continue;
         }
 
+        // content/notes/<slug>.md —— 扁平单文件，子目录不算
+        const nm = path.match(/^content\/notes\/([^/]+)\.md$/);
+        if (nm) {
+            notes.push({ slug: nm[1], path, sha: entry.sha });
+            continue;
+        }
+
+        // content/series/<slug>/index.md —— 系列索引
+        const sm = path.match(/^content\/series\/([^/]+)\/(?:index|README)\.md$/);
+        if (sm) {
+            series.push({ slug: sm[1], path, sha: entry.sha });
+            continue;
+        }
+
+        // content/books/<slug>/index.md —— 书籍索引
+        const bm = path.match(/^content\/books\/([^/]+)\/index\.md$/);
+        if (bm) {
+            books.push({ slug: bm[1], path, sha: entry.sha });
+            continue;
+        }
+
+        // content/<name>.md —— 顶层页面（只认根级）
+        const pgm = path.match(/^content\/([^/]+)\.md$/);
+        if (pgm && !RESERVED_DIRS.includes(pgm[1])) {
+            pages.push({ name: pgm[1], path, sha: entry.sha });
+            continue;
+        }
+
         // content/flows/YYYY/MM/DD.md
-        const fd = flowToDate(entry.path);
+        const fd = flowToDate(path);
         if (fd) {
             flows.push({
                 date: fd,
                 // 扁平 / 文件夹两种形式都收录，后续按实际存在的那个读写
-                flatPath: entry.path.endsWith(`/index.md`) ? null : entry.path,
-                folderPath: entry.path.endsWith(`/index.md`) ? entry.path : null,
-                path: entry.path,
+                flatPath: path.endsWith(`/index.md`) ? null : path,
+                folderPath: path.endsWith(`/index.md`) ? path : null,
+                path,
                 sha: entry.sha,
             });
         }
@@ -122,8 +237,13 @@ export function parseTreePaths(paths) {
 
     posts.sort((a, b) => (b.date || "").localeCompare(a.date || ""));
     flows.sort((a, b) => b.date.localeCompare(a.date));
+    notes.sort((a, b) => a.slug.localeCompare(b.slug));
+    series.sort((a, b) => a.slug.localeCompare(b.slug));
+    books.sort((a, b) => a.slug.localeCompare(b.slug));
+    pages.sort((a, b) => a.name.localeCompare(b.name));
+    images.sort((a, b) => a.path.localeCompare(b.path));
 
-    return { posts, flows };
+    return { posts, flows, notes, series, books, pages, images };
 }
 
 /* ----------------------------------------------------------- 上传路径推导 */

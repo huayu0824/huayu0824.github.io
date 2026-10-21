@@ -146,6 +146,121 @@ export function getUser(token) {
     return gh("/user", token);
 }
 
+/**
+ * 某个文件的提交历史（新的在前）。
+ * GitHub 的 commits 接口按 path 过滤，能拿到每次改这个文件的提交。
+ */
+export async function listCommits(path, token, limit = 20) {
+    const qs = new URLSearchParams({
+        path,
+        sha: env("GITHUB_BRANCH"),
+        per_page: String(limit),
+    });
+    const data = await gh(`/repos/${repoPath()}/commits?${qs.toString()}`, token);
+    if (!Array.isArray(data)) return [];
+
+    return data.map((c) => ({
+        sha: c.sha,
+        message: String(c.commit?.message || "").split("\n")[0],
+        date: c.commit?.author?.date || c.commit?.committer?.date || "",
+        author: c.commit?.author?.name || "",
+    }));
+}
+
+/** 读某个 ref（commit sha / 分支）下的文件内容，用于版本回滚 */
+export async function getFileAtRef(path, ref, token) {
+    const qs = new URLSearchParams({ ref });
+    const data = await gh(
+        `/repos/${repoPath()}/contents/${encodePath(path)}?${qs.toString()}`,
+        token
+    );
+    if (Array.isArray(data) || data.type !== "file") return null;
+    return {
+        path: data.path,
+        sha: data.sha,
+        text: data.encoding === "base64" ? fromBase64(data.content) : data.content,
+    };
+}
+
+/* ------------------------------------------------------------------ 搜索 */
+
+/**
+ * 仓库内全文搜索，返回命中的文件路径。
+ *
+ * 为什么用 code search 而不是自己遍历：把整个仓库的文件都读一遍会撞上
+ * Cloudflare 免费版单请求 50 个子请求的上限。code search 一次请求就能
+ * 给出命中路径，之后只读这几个文件。
+ *
+ * 认证 token 的 code search 配额是每分钟 10 次，够个人博客用了。
+ */
+export async function searchFiles(token, { query, pathPrefix, limit = 40 }) {
+    const parts = [query, `repo:${repoPath()}`];
+    if (pathPrefix) parts.push(`path:${pathPrefix}`);
+
+    const data = await gh(
+        `/search/code?q=${encodeURIComponent(parts.join(" "))}&per_page=${Math.min(limit, 100)}`,
+        token
+    );
+    if (!data || !Array.isArray(data.items)) return [];
+    return data.items.map((item) => item.path);
+}
+
+/* ------------------------------------------------------------- 批量提交 */
+/**
+ * 一次提交写入多个文件（可同时删除）。
+ *
+ * 走 Git Data API 而不是逐个 Contents API：
+ * Contents API 一个文件一次请求，Cloudflare 免费版单请求只有 50 个子请求，
+ * 批量改 20 篇文章就会撞线。Git Data API 可以把文件内容直接内联在 tree 里，
+ * 无论改几个文件都只花 5 次请求（取 ref → 取 tree → 建 tree → 建 commit → 更新 ref）。
+ *
+ * files:    [{ path, text }]
+ * deletions:[path]
+ */
+export async function commitFiles(token, { message, files = [], deletions = [] }) {
+    const branch = env("GITHUB_BRANCH");
+    const branchRef = encodeURIComponent(branch);
+
+    const ref = await gh(`/repos/${repoPath()}/git/ref/heads/${branchRef}`, token);
+    const baseCommit = ref.object.sha;
+
+    const base = await gh(`/repos/${repoPath()}/git/commits/${baseCommit}`, token);
+    const baseTree = base.tree.sha;
+
+    const tree = files.map((f) => ({
+        path: f.path,
+        mode: "100644",
+        type: "blob",
+        content: f.text,
+    }));
+
+    // sha 为 null 表示删除该路径
+    for (const path of deletions) {
+        tree.push({ path, mode: "100644", type: "blob", sha: null });
+    }
+
+    const newTree = await gh(`/repos/${repoPath()}/git/trees`, token, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ base_tree: baseTree, tree }),
+    });
+
+    const commit = await gh(`/repos/${repoPath()}/git/commits`, token, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message, tree: newTree.sha, parents: [baseCommit] }),
+    });
+
+    // force:false 表示只允许快进，仓库有并发提交时会失败而不是覆盖别人的改动
+    await gh(`/repos/${repoPath()}/git/refs/heads/${branchRef}`, token, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sha: commit.sha, force: false }),
+    });
+
+    return commit.sha;
+}
+
 function repoPath() {
     return `${env("GITHUB_OWNER")}/${env("GITHUB_REPO")}`;
 }
