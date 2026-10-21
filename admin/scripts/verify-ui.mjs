@@ -62,6 +62,27 @@ function jsonResponse(data, status = 200) {
     };
 }
 
+const TEXT_DEFAULTS = { zh: { home: "首页", archive: "归档" }, en: { home: "Home" } };
+let textOverrides = { zh: {}, en: {} };
+
+const SETTINGS = {
+    title: { zh: "旧名字", en: "Old" },
+    description: { zh: "旧描述", en: "" },
+    logo: { src: "/images/avatar.png", favicon: "/icon.svg" },
+    ogImage: "/og-image.png",
+    hero: { tagline: { zh: "标语" }, title: { zh: "大标题" }, subtitle: { zh: "副标题" } },
+    features: {
+        posts: { enabled: true, name: { zh: "文章" } },
+        series: { enabled: true, name: { zh: "系列" } },
+    },
+    homepage: { sections: [{ id: "hero", enabled: true }, { id: "featured-posts", enabled: true, maxItems: 4 }] },
+    nav: [{ name: "文章", url: "/posts", weight: 1 }],
+    footer: { explore: [{ name: "归档", url: "/archive", weight: 1 }], connect: [], builtWith: { show: true } },
+    footerText: { zh: "© 2026" },
+    social: { github: "https://github.com/huayu0824" },
+    share: { enabled: true, platforms: ["twitter"] },
+};
+
 globalThis.fetch = async (path, options) => {
     const method = (options && options.method) || "GET";
     const body = options && options.body ? JSON.parse(options.body) : null;
@@ -69,6 +90,17 @@ globalThis.fetch = async (path, options) => {
 
     if (path === "/api/session") {
         return jsonResponse({ login: "huayu0824", name: "花羽", avatar: "", repo: "huayu0824/huayu0824.github.io", branch: "main", defaultAuthor: "花羽" });
+    }
+    if (path === "/api/settings") {
+        if (method === "PUT") return jsonResponse({ ok: true, path: "site.settings.json", message: "站点设置已保存" });
+        return jsonResponse({ ok: true, path: "site.settings.json", exists: true, settings: JSON.parse(JSON.stringify(SETTINGS)) });
+    }
+    if (path === "/api/texts") {
+        if (method === "PUT") {
+            textOverrides = body.overrides || body;
+            return jsonResponse({ ok: true, path: "site.texts.json", message: "页面文字已保存" });
+        }
+        return jsonResponse({ ok: true, path: "site.texts.json", exists: true, defaults: TEXT_DEFAULTS, overrides: JSON.parse(JSON.stringify(textOverrides)) });
     }
     if (path.startsWith("/api/posts?") || path === "/api/posts") {
         return jsonResponse({ items: POSTS, total: POSTS.length, offset: 0, limit: 40, truncated: false, searched: false });
@@ -110,6 +142,9 @@ bodyHtml = bodyHtml.replace(/<script[^>]*src=[^>]*><\/script>/g, "");
 document.body.innerHTML = bodyHtml;
 
 const appCode = fs.readFileSync(path.join(ADMIN, "public", "app.js"), "utf8");
+const settingsCode = fs.readFileSync(path.join(ADMIN, "public", "settings.js"), "utf8");
+// 顺序跟 index.html 一致：settings.js 先定义，app.js 再把它 init 起来
+(0, eval)(settingsCode);
 (0, eval)(appCode);
 
 await tick(120); // 等 boot() 把列表拉完
@@ -226,6 +261,124 @@ await check("切回系列保存，items 不再发出去", async () => {
     if (last.body.items) throw new Error("切回系列后还在发 items");
     if (last.body.type === "collection") throw new Error("type 还是 collection");
     return "type 已清空";
+});
+
+/* ------------------------------------------------------------------ 站点设置 */
+
+console.log("\n站点设置");
+
+await check("点齿轮打开设置页", async () => {
+    $("settingsBtn").click();
+    await tick(150);
+    eq($("settingsView").hidden, false, "设置页是否显示");
+    eq($("app").hidden, true, "写作区应隐藏");
+    const groups = qsa(".set-nav-item").map((el) => el.textContent);
+    if (groups.length < 5) throw new Error("设置分组太少：" + groups.join("/"));
+    return groups.join(" · ");
+});
+
+await check("站点分组里能看到当前的博客名称", () => {
+    const inputs = qsa("#settingsMain .set-input");
+    const title = inputs.find((el) => el.value === "旧名字");
+    if (!title) throw new Error("没找到博客名称输入框");
+    return "旧名字";
+});
+
+await check("改博客名称后保存，请求体带上新名字", async () => {
+    const inputs = qsa("#settingsMain .set-input");
+    const title = inputs.find((el) => el.value === "旧名字");
+    title.value = "新名字";
+    title.dispatchEvent(new window.Event("input"));
+
+    $("settingsSave").click();
+    await tick(150);
+
+    const put = sent.find((s) => s.method === "PUT" && s.path === "/api/settings");
+    if (!put) throw new Error("没发出保存请求");
+    eq(put.body.settings.title.zh, "新名字", "请求体里的博客名称");
+    return "新名字";
+});
+
+await check("页面开关那一组能列出功能并能关掉", async () => {
+    qsa(".set-nav-item").find((el) => el.textContent.includes("页面开关")).click();
+    await tick(60);
+
+    const rows = qsa(".set-switch-row");
+    if (rows.length < 2) throw new Error("开关行太少");
+    const label = rows[0].querySelector(".set-switch-label").textContent;
+    if (!label) throw new Error("开关没有名字");
+
+    const cb = rows[0].querySelector("input[type=checkbox]");
+    cb.checked = false;
+    cb.dispatchEvent(new window.Event("change"));
+
+    $("settingsSave").click();
+    await tick(150);
+
+    const puts = sent.filter((s) => s.method === "PUT" && s.path === "/api/settings");
+    const last = puts[puts.length - 1];
+    eq(last.body.settings.features.posts.enabled, false, "开关状态");
+    return `${rows.length} 个开关，第一个是「${label}」`;
+});
+
+await check("导航那一组能改条目名字", async () => {
+    qsa(".set-nav-item").find((el) => el.textContent.includes("导航")).click();
+    await tick(60);
+
+    const name = qsa("#settingsMain .set-list-item .set-input")[0];
+    if (!name) throw new Error("导航里没有条目");
+    name.value = "写文章";
+    name.dispatchEvent(new window.Event("input"));
+
+    $("settingsSave").click();
+    await tick(150);
+
+    const puts = sent.filter((s) => s.method === "PUT" && s.path === "/api/settings");
+    const last = puts[puts.length - 1];
+    eq(last.body.settings.nav[0].name, "写文章", "导航条目");
+    return "写文章";
+});
+
+await check("页面文字那组只把改过的词条发出去", async () => {
+    qsa(".set-nav-item").find((el) => el.textContent.includes("页面文字")).click();
+    await tick(60);
+
+    const rows = qsa(".set-text-row");
+    if (rows.length < 2) throw new Error("文案列表太短");
+
+    const home = rows.find((row) => row.querySelector(".set-text-key").textContent === "home");
+    if (!home) throw new Error("没找到 home 词条");
+    const input = home.querySelector("input");
+    if (input.placeholder !== "首页") throw new Error("默认值没当占位提示");
+    if (input.value !== "首页") throw new Error("默认值没填进输入框");
+
+    input.value = "首页改过了";
+    input.dispatchEvent(new window.Event("input"));
+
+    $("settingsSave").click();
+    await tick(150);
+
+    const put = sent.find((s) => s.method === "PUT" && s.path === "/api/texts");
+    if (!put) throw new Error("没发出保存请求");
+    eq(put.body.overrides, { zh: { home: "首页改过了" } }, "只发改过的词条");
+    return "只发了 home 一条";
+});
+
+await check("改回默认值就不写进覆盖里", async () => {
+    const rows = qsa(".set-text-row");
+    const home = rows.find((row) => row.querySelector(".set-text-key").textContent === "home");
+    const input = home.querySelector("input");
+    input.value = "首页";
+    input.dispatchEvent(new window.Event("input"));
+
+    $("settingsSave").click();
+    await tick(150);
+
+    const puts = sent.filter((s) => s.method === "PUT" && s.path === "/api/texts");
+    const last = puts[puts.length - 1];
+    // 改回默认值 → 覆盖里删掉这一条 → 整条语言都空了 → 干脆不写这个语言
+    eq(last.body.overrides.zh, undefined, "覆盖里不该有 zh");
+    return "覆盖已清空";
 });
 
 /* ------------------------------------------------------------------ 收尾 */

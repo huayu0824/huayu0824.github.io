@@ -545,6 +545,97 @@ await check("从合集切回系列会清掉 type 和 items", async () => {
     return "已切成系列";
 });
 
+/* ------------------------------------------------------------ 站点设置 */
+
+console.log("\n站点设置");
+put("site.settings.json", JSON.stringify({
+    title: { zh: "旧名字", en: "Old" },
+    nav: [{ name: "文章", url: "/posts", weight: 1 }],
+}, null, 2));
+
+const getSettings = await call("/api/settings");
+await check("读取站点设置", () => {
+    if (getSettings.status !== 200) throw new Error("status = " + getSettings.status);
+    eq(getSettings.data.settings.title.zh, "旧名字", "title");
+    eq(getSettings.data.path, "site.settings.json", "path");
+    return "设置已读出";
+});
+
+const putSettings = await call("/api/settings", {
+    method: "PUT",
+    body: { settings: { title: { zh: "新名字", en: "New" }, nav: [{ name: "文章", url: "/posts", weight: 1 }] } },
+});
+await check("保存站点设置写进 site.settings.json", () => {
+    if (putSettings.status !== 200) throw new Error("status = " + putSettings.status);
+    const text = repo.get("site.settings.json").text;
+    if (!text.includes("新名字")) throw new Error("标题没写进去");
+    if (!text.includes("nav")) throw new Error("导航没写进去");
+    return "已写入";
+});
+
+await check("设置结构不对被拒（写坏了站点会构建失败）", async () => {
+    const res = await call("/api/settings", {
+        method: "PUT",
+        body: { settings: { nav: [{ name: "缺 url" }] } },
+    });
+    if (res.status !== 400) throw new Error("status = " + res.status);
+    return res.data.error;
+});
+
+await check("页面开关必须是布尔值", async () => {
+    const res = await call("/api/settings", {
+        method: "PUT",
+        body: { settings: { features: { series: { enabled: "yes" } } } },
+    });
+    if (res.status !== 400) throw new Error("status = " + res.status);
+    return res.data.error;
+});
+
+/* ------------------------------------------------------------ 页面文字 */
+
+console.log("\n页面文字");
+put("src/i18n/translations.ts", [
+    "export const translations = {",
+    "  en: {",
+    '    home: "Home",',
+    '    archive: "Archive",',
+    "  },",
+    "  zh: {",
+    '    home: "首页",',
+    '    archive: "归档",',
+    "  },",
+    "};",
+].join("\n"));
+put("site.texts.json", JSON.stringify({ zh: {}, en: {} }, null, 2));
+
+const getTexts = await call("/api/texts");
+await check("读取页面文字时带上默认词条", () => {
+    if (getTexts.status !== 200) throw new Error("status = " + getTexts.status);
+    eq(getTexts.data.defaults.zh.home, "首页", "默认词条");
+    eq(getTexts.data.defaults.en.archive, "Archive", "英文默认词条");
+    return "默认词条已读出";
+});
+
+await check("保存页面文字覆盖", async () => {
+    const res = await call("/api/texts", {
+        method: "PUT",
+        body: { overrides: { zh: { home: "首页改过了" } } },
+    });
+    if (res.status !== 200) throw new Error("status = " + res.status);
+    const text = repo.get("site.texts.json").text;
+    if (!text.includes("首页改过了")) throw new Error("没写进去");
+    return "已写入 site.texts.json";
+});
+
+await check("不存在的文案键被拒（写了也不生效）", async () => {
+    const res = await call("/api/texts", {
+        method: "PUT",
+        body: { overrides: { zh: { not_a_real_key: "随便写" } } },
+    });
+    if (res.status !== 400) throw new Error("status = " + res.status);
+    return res.data.error;
+});
+
 /* ------------------------------------------------------------ 历史 */
 
 console.log("\n版本历史");

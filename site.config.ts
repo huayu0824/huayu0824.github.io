@@ -4,7 +4,15 @@
  * 注意：i18n 开启后，可本地化字段（title / description / hero / features.*.name）
  * 必须是 { <locale>: string } 映射，写成纯字符串会导致 TypeScript 编译失败。
  * 这里只配了 zh 一种语言，语言切换器不会出现。
+ *
+ * ── 后台可改的那部分 ────────────────────────────────────────────────────────
+ * 站点名称、页面开关、导航、页脚、首页文案这些，后台「设置」页写的是
+ * 仓库根目录的 site.settings.json，构建时由本文件深合并覆盖掉下面的默认值。
+ * 也就是说：**改这些要去改 site.settings.json（或用后台改），改这里的默认值不生效。**
+ * 这里的值只作兜底（JSON 里缺哪个键就用哪个）。
  */
+
+import siteSettings from "./site.settings.json";
 
 export interface NavChildItem {
     name: string;
@@ -30,7 +38,28 @@ const social = {
     bilibili: "https://bilibili.com/454659285",
 };
 
-export const siteConfig = {
+/** 深合并：对象递归覆盖，数组和标量直接替换 */
+type Plain = Record<string, unknown>;
+
+function isPlainObject(value: unknown): value is Plain {
+    return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function mergeSettings<T>(base: T, override: unknown): T {
+    if (!isPlainObject(override)) return base;
+    if (!isPlainObject(base)) return override as T;
+
+    const out: Plain = { ...(base as unknown as Plain) };
+    for (const [key, value] of Object.entries(override)) {
+        if (value === undefined) continue;
+        out[key] = isPlainObject(value) && isPlainObject(out[key])
+            ? mergeSettings(out[key], value)
+            : value;
+    }
+    return out as unknown as T;
+}
+
+const baseConfig = {
 
     // ── 站点标识 ──────────────────────────────────────────────────────────────
     title: { zh: "花羽的体育笔记", en: "花羽的体育笔记" },
@@ -274,3 +303,9 @@ export const siteConfig = {
     }>,
 
 };
+
+/**
+ * 最终生效的配置 = 默认值 + site.settings.json 里的覆盖。
+ * 类型保持成 baseConfig 的类型，免得 80 个引用 site.config 的文件全要改。
+ */
+export const siteConfig = mergeSettings(baseConfig, siteSettings) as typeof baseConfig;

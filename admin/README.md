@@ -244,6 +244,42 @@ SESSION_SECRET=...
 
 ---
 
+## 站点设置
+
+后台右上角的齿轮按钮打开「站点设置」，改的是仓库根目录的两个文件：
+
+| 文件 | 管什么 |
+|------|--------|
+| `site.settings.json` | 博客名称、描述、Logo、分享图、首页文案、**页面开关**、导航、页脚、社交账号 |
+| `site.texts.json` | 页面文字（覆盖 amytis 的 i18n 词条，比如页面标题、说明、按钮） |
+
+**构建时它们会覆盖掉 `site.config.ts` / `src/i18n/translations.ts` 里的默认值。**
+所以改了设置要改这两个文件（或用后台改），改 `site.config.ts` 里的默认值不生效——
+那里的值只作兜底（JSON 里缺哪个键就用哪个）。
+
+改完点保存 → 提交一次 commit → CI 重建 → 约 1 分钟后站点生效。
+
+### 能调哪些开关
+
+| 开关 | 作用 |
+|------|------|
+| 文章 / 系列 / 书籍 / 随笔 | 关掉的页面，导航里也不再出现（amytis 的 `features`） |
+| 首页分区 | 精选文章 / 最新文章 / 最近随笔 / 精选系列 / 精选书籍，逐个开关 + 改条数 |
+| 导航 | 增删条目、改名字和链接、调顺序、给「更多」加子项 |
+| 页脚 | 探索 / 链接两组链接、社交账号、版权文字 |
+| 页面文字 | 站点各处文案，带搜索；只保存你改过的词条 |
+
+### 两道保险
+
+设置写坏了，站点会直接构建失败。所以后台在保存前会拦：
+
+1. **结构校验**——`nav` 的每一项要有 name 和 url，`features.*.enabled` 必须是布尔值，`homepage.sections[].id` 不能空，等等。
+2. **文案键校验**——`site.texts.json` 里的键必须是 i18n 词条里真有的，否则写了也不生效。
+
+另外 `site.texts.json` 的形状允许变（比如只留 zh），构建层用了不依赖静态类型的写法，改了语言也不会把 TS 编译搞挂。
+
+---
+
 ## 目录结构
 
 ```
@@ -253,10 +289,12 @@ admin/
     github.js     GitHub API 封装（tree / contents / code search / Git Data 批量提交）
     content.js    路径规则：六种内容的落盘位置、上传路径
     markdown.js   front matter 解析与序列化
+    settings.js   站点设置的读写与结构校验
     session.js    会话令牌签名与校验
   public/         后台前端（静态资源）
     index.html    页面骨架
     app.js        数据驱动的类型注册表 + 全部交互
+    settings.js   站点设置面板
     app.css       样式（含明暗两套主题、移动端适配）
   scripts/
     verify-admin.mjs   内容格式回归测试（amytis 真实加载器）
@@ -282,6 +320,8 @@ GET/DELETE        /api/images[?path=]
 POST              /api/batch { type, action: delete|draft, keys: [...] }
 POST              /api/upload
 GET               /api/session
+GET/PUT           /api/settings                站点设置（site.settings.json）
+GET/PUT           /api/texts                   页面文字（site.texts.json）
 ```
 
 主键字段名按类型不同：文章/笔记/系列/书籍是 `slug`，随笔是 `date`，页面是 `name`。

@@ -2058,6 +2058,15 @@
         });
     }
 
+    /* 暴露给 settings.js：设置面板要共用同一套 api / toast / DOM 工具 */
+    window.AdminCore = {
+        api: api,
+        toast: toast,
+        el: $,
+        qsa: qsa,
+    };
+
     bind();
+    if (window.AdminSettings) window.AdminSettings.init();
     boot();
 })();

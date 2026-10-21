@@ -30,6 +30,7 @@ import {
 } from "./session.js";
 import * as md from "./markdown.js";
 import * as c from "./content.js";
+import * as st from "./settings.js";
 import {
     GitHubError,
     commitFiles,
@@ -235,6 +236,18 @@ async function handleApi(request, url, env) {
             branch: optionalEnv("GITHUB_BRANCH"),
             defaultAuthor: optionalEnv("DEFAULT_AUTHOR") || AUTHOR_FALLBACK,
         });
+    }
+
+    /* ------------------------------------------------------------- 站点设置 */
+
+    if (path === "/api/settings") {
+        if (request.method === "GET") return respond(await getSettings(token));
+        return respond(await saveSettings(token, await readBody(request)));
+    }
+
+    if (path === "/api/texts") {
+        if (request.method === "GET") return respond(await getTexts(token));
+        return respond(await saveTexts(token, await readBody(request)));
     }
 
     /* ------------------------------------------------------------- 文章 */
@@ -1404,6 +1417,116 @@ async function removePage(token, name) {
     await deleteFile(entry.path, token, { sha: entry.sha, message: `删除页面：${name}` });
     invalidate();
     return { ok: true, message: "页面已删除" };
+}
+
+/* -------------------------------------------------------------- 站点设置 */
+
+/**
+ * 站点设置：仓库根目录的 site.settings.json
+ *
+ * 构建时它会覆盖 site.config.ts 里的默认值（见 site.config.ts 的 mergeSettings），
+ * 所以后台改完保存 → 提交 → CI 重建 → 站点生效。
+ */
+async function getSettings(token) {
+    const file = await getFile(st.SETTINGS_PATH, token);
+    let settings = {};
+    if (file) {
+        try {
+            settings = JSON.parse(file.text);
+        } catch (err) {
+            return fail(500, `${st.SETTINGS_PATH} 不是合法的 JSON：${err.message}`);
+        }
+    }
+    return {
+        ok: true,
+        path: st.SETTINGS_PATH,
+        exists: Boolean(file),
+        settings,
+    };
+}
+
+async function saveSettings(token, input) {
+    const payload = input && typeof input === "object" && input.settings !== undefined ? input.settings : input;
+    try {
+        st.validateSettings(payload);
+    } catch (err) {
+        return fail(err.status || 400, err.message);
+    }
+
+    const file = await getFile(st.SETTINGS_PATH, token);
+    const raw = st.stringifySettings(payload);
+
+    await putFile(st.SETTINGS_PATH, raw, token, {
+        sha: file ? file.sha : undefined,
+        message: "更新站点设置",
+    });
+
+    return {
+        ok: true,
+        path: st.SETTINGS_PATH,
+        message: "站点设置已保存，约 1 分钟后站点生效",
+    };
+}
+
+/**
+ * 页面文字：仓库根目录的 site.texts.json
+ *
+ * 覆盖 amytis 的 i18n 词条（见 src/i18n/translations.ts）。
+ * 读取时同时把默认词条一起返回，前端拿默认值当占位提示，
+ * 只把真正改过的词条写回文件。
+ */
+async function getTexts(token) {
+    const file = await getFile(st.TEXTS_PATH, token);
+    let overrides = {};
+    if (file) {
+        try {
+            overrides = JSON.parse(file.text);
+        } catch (err) {
+            return fail(500, `${st.TEXTS_PATH} 不是合法的 JSON：${err.message}`);
+        }
+    }
+
+    let defaults = {};
+    const source = await getFile(st.TRANSLATIONS_PATH, token);
+    if (source) defaults = st.parseTranslations(source.text);
+
+    return {
+        ok: true,
+        path: st.TEXTS_PATH,
+        exists: Boolean(file),
+        defaults,
+        overrides,
+    };
+}
+
+async function saveTexts(token, input) {
+    const payload = input && typeof input === "object" && input.overrides !== undefined ? input.overrides : input;
+
+    // 键必须是 i18n 里真有的，否则写了也不生效
+    let knownKeys = [];
+    const source = await getFile(st.TRANSLATIONS_PATH, token);
+    if (source) {
+        const defaults = st.parseTranslations(source.text);
+        knownKeys = Array.from(new Set([...Object.keys(defaults.zh || {}), ...Object.keys(defaults.en || {})]));
+    }
+
+    try {
+        st.validateTexts(payload, knownKeys);
+    } catch (err) {
+        return fail(err.status || 400, err.message);
+    }
+
+    const file = await getFile(st.TEXTS_PATH, token);
+    await putFile(st.TEXTS_PATH, st.stringifyTexts(payload), token, {
+        sha: file ? file.sha : undefined,
+        message: "更新页面文字",
+    });
+
+    return {
+        ok: true,
+        path: st.TEXTS_PATH,
+        message: "页面文字已保存，约 1 分钟后站点生效",
+    };
 }
 
 /* -------------------------------------------------------------- 版本历史 */

@@ -143,6 +143,89 @@ put("content/flows/2026/10/14.md", ["---", "date: 2026-10-14", "---", "", "随�
 
 put("content/posts/2026-06-23-with-u/images/cover.png", "fake-png");
 
+/* ------------------------------------------------------- 站点设置（假数据） */
+
+put("site.settings.json", JSON.stringify({
+    title: { zh: "花羽的体育笔记", en: "花羽的体育笔记" },
+    description: { zh: "学体育的，现在主要在做硬件和 AI。", en: "" },
+    logo: { src: "/images/avatar.png", favicon: "/icon.svg" },
+    ogImage: "/og-image.png",
+    hero: {
+        tagline: { zh: "花羽的体育笔记", en: "" },
+        title: { zh: "在传统的底色上，画一点未来的东西。", en: "" },
+        subtitle: { zh: "体育教育出身，现在主要在做硬件和 AI。", en: "" },
+    },
+    features: {
+        posts: { enabled: true, name: { zh: "文章", en: "Posts" } },
+        series: { enabled: true, name: { zh: "系列", en: "Series" } },
+        books: { enabled: true, name: { zh: "书籍", en: "Books" } },
+        flow: { enabled: true, name: { zh: "随笔", en: "Flow" } },
+    },
+    homepage: {
+        sections: [
+            { id: "hero", enabled: true, weight: 1 },
+            { id: "featured-posts", enabled: true, weight: 2, maxItems: 4 },
+            { id: "latest-posts", enabled: true, weight: 3, maxItems: 3 },
+            { id: "recent-flows", enabled: true, weight: 4, maxItems: 8 },
+            { id: "featured-series", enabled: true, weight: 5, maxItems: 6 },
+            { id: "featured-books", enabled: true, weight: 6, maxItems: 4 },
+        ],
+    },
+    nav: [
+        { name: "文章", url: "/posts", weight: 1 },
+        { name: "随笔", url: "/flows", weight: 2 },
+        { name: "笔记", url: "/notes", weight: 3 },
+        { name: "系列", url: "/series", weight: 4 },
+        { name: "书籍", url: "/books", weight: 5 },
+        { name: "关于", url: "/about", weight: 6 },
+        { name: "更多", url: "", weight: 7, children: [
+            { name: "归档", url: "/archive" },
+            { name: "标签", url: "/tags" },
+            { name: "友链", url: "/links" },
+        ]},
+    ],
+    footer: {
+        explore: [{ name: "文章", url: "/posts", weight: 1 }],
+        connect: [{ name: "GitHub", url: "https://github.com/huayu0824", weight: 1 }],
+        builtWith: { show: true, url: "https://github.com/hutusi/amytis", text: "Built with Amytis" },
+        bottomLinks: [],
+    },
+    footerText: { zh: "© 2026 花羽的体育笔记", en: "© 2026 花羽的体育笔记" },
+    social: {
+        github: "https://github.com/huayu0824",
+        twitter: "https://twitter.com/Blue_Jingling",
+        bilibili: "https://bilibili.com/454659285",
+    },
+    share: { enabled: true, platforms: ["twitter", "weibo", "zhihu", "copy"] },
+}, null, 2));
+
+put("site.texts.json", JSON.stringify({ zh: {}, en: {} }, null, 2));
+
+const TEXT_DEFAULTS = {
+    zh: {
+        home: "首页",
+        archive: "归档",
+        tags: "标签",
+        notes: "笔记",
+        series: "系列",
+        books: "书籍",
+        flow: "随笔",
+        posts: "文章",
+        view_all_posts: "查看全部 {count} 篇文章",
+        no_posts: "还没有内容",
+    },
+    en: {
+        home: "Home",
+        archive: "Archive",
+        tags: "Tags",
+        notes: "Notes",
+        series: "Series",
+        books: "Books",
+        flow: "Flow",
+        posts: "Posts",
+    },
+};
+
 /* ------------------------------------------------------- 内容解析 */
 
 function parse(text) {
@@ -438,7 +521,9 @@ const MIME = {
 };
 
 const server = http.createServer(async (req, res) => {
-    const url = new URL(req.url, "http://127.0.0.1");
+    // 路径以 // 开头时 new URL 会当成协议相对地址，直接炸掉
+    const raw = req.url.startsWith("//") ? "/" + req.url.replace(/^\/+/, "") : req.url;
+    const url = new URL(raw, "http://127.0.0.1");
     const p = url.pathname;
     console.log(`[${req.method}] ${p}${url.search}`);
 
@@ -464,6 +549,37 @@ const server = http.createServer(async (req, res) => {
             return send(200, {
                 login: "huayu0824", name: "花羽", avatar: "",
                 repo: "huayu0824/huayu0824.github.io", branch: "main", defaultAuthor: "花羽",
+            });
+        }
+
+        if (p === "/api/settings") {
+            if (req.method === "PUT") {
+                const incoming = body.settings || body;
+                put("site.settings.json", JSON.stringify(incoming, null, 2) + "\n");
+                return send(200, { ok: true, path: "site.settings.json", message: "站点设置已保存，约 1 分钟后站点生效" });
+            }
+            const file = repo.get("site.settings.json");
+            return send(200, {
+                ok: true,
+                path: "site.settings.json",
+                exists: Boolean(file),
+                settings: file ? JSON.parse(file.text) : {},
+            });
+        }
+
+        if (p === "/api/texts") {
+            if (req.method === "PUT") {
+                const incoming = body.overrides || body;
+                put("site.texts.json", JSON.stringify(incoming, null, 2) + "\n");
+                return send(200, { ok: true, path: "site.texts.json", message: "页面文字已保存，约 1 分钟后站点生效" });
+            }
+            const file = repo.get("site.texts.json");
+            return send(200, {
+                ok: true,
+                path: "site.texts.json",
+                exists: Boolean(file),
+                defaults: TEXT_DEFAULTS,
+                overrides: file ? JSON.parse(file.text) : {},
             });
         }
 

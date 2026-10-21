@@ -55,6 +55,9 @@
             <button class="icon-btn" id="keysBtn" type="button" aria-label="快捷键" title="快捷键">
                 <svg viewBox="0 0 24 24"><rect x="2.5" y="6" width="19" height="12" rx="2"></rect><path d="M6 10h.01M10 10h.01M14 10h.01M18 10h.01M8 14h8"></path></svg>
             </button>
+            <button class="icon-btn" id="settingsBtn" type="button" aria-label="站点设置" title="站点设置">
+                <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6h.09A1.65 1.65 0 0 0 10 3.09V3a2 2 0 1 1 4 0v.09A1.65 1.65 0 0 0 15 4.6a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9v.09a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+            </button>
             <button class="icon-btn" id="schemeBtn" type="button" aria-label="切换明暗"></button>
             <img class="avatar" id="avatar" alt="">
             <span class="who" id="who"></span>
@@ -247,8 +250,24 @@
     </div>
 </div>
 
+<!-- ---------------------------------------------------------------- 站点设置 -->
+<section class="settings-view" id="settingsView" hidden>
+    <div class="settings-inner">
+        <nav class="settings-side">
+            <div class="settings-side-head">
+                <strong>站点设置</strong>
+                <button class="btn-link" id="settingsClose" type="button">返回写作</button>
+            </div>
+            <div class="settings-nav" id="settingsNav"></div>
+            <p class="settings-side-tip">改完点保存，会自动提交到仓库，约 1 分钟后站点生效。</p>
+        </nav>
+        <div class="settings-main" id="settingsMain"></div>
+    </div>
+</section>
+
 <div class="toast" id="toast" hidden></div>
 
+<script src="settings.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

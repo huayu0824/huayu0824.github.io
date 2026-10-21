@@ -1,4 +1,19 @@
-export const translations = {
+/**
+ * 站点文案表。
+ *
+ * 后台「设置」页 → 「页面文字」写的是仓库根目录的 site.texts.json，
+ * 构建时覆盖到对应语言上。所以**改这些文案要去改 site.texts.json（或用后台改）**，
+ * 改这里的默认值不生效——这里只作兜底。
+ *
+ * 键名必须跟 en 段已有的键对齐（后台保存时会校验），
+ * 没出现过的键不会被用到。
+ */
+import siteTexts from "../../site.texts.json";
+
+// 后台可以改这个文件的形状（比如只留 zh），所以这里不依赖 JSON 的静态类型。
+const texts = siteTexts as unknown as Record<string, Record<string, string>>;
+
+const baseTranslations = {
   en: {
     home: "Home",
     garden: "Garden",
@@ -415,6 +430,11 @@ export const translations = {
     expand_sidebar: "展开目录",
     reset_to_defaults: "恢复默认",
   },
+};
+
+export const translations = {
+  en: { ...baseTranslations.en, ...(texts.en || {}) },
+  zh: { ...baseTranslations.zh, ...(texts.zh || {}) },
 };
 
 export type Language = keyof typeof translations;
