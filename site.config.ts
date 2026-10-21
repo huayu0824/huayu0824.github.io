@@ -56,11 +56,16 @@ export const siteConfig = {
     },
 
     // ── 导航 ──────────────────────────────────────────────────────────────────
+    // ─────────────────────────────────────────────────────────────────────────
+    // 导航只放「已经有内容」的入口。笔记 / 系列 / 书籍 / Flow / 图谱 这几项
+    // 在 content/notes、content/series、content/books、content/flows 建目录、
+    // 并把下面的 features 开关打开之后，再逐项加回来——否则访客点进去是
+    // 「共 0 条」的空页。
+    // ─────────────────────────────────────────────────────────────────────────
     nav: [
         { name: "文章", url: `/${postsBasePath}`, weight: 1 },
-        { name: "Flow", url: "/flows", weight: 2 },
-        { name: "关于", url: "/about", weight: 3 },
-        { name: "更多", url: "", weight: 4, children: [
+        { name: "关于", url: "/about", weight: 2 },
+        { name: "更多", url: "", weight: 3, children: [
             { name: "归档", url: "/archive" },
             { name: "标签", url: "/tags", dividerBefore: true },
             { name: "友链", url: "/links" },
@@ -70,9 +75,10 @@ export const siteConfig = {
     // ── 页脚 ──────────────────────────────────────────────────────────────────
     footer: {
         explore: [
-            { name: "归档", url: "/archive", weight: 1 },
-            { name: "标签", url: "/tags", weight: 2 },
-            { name: "关于", url: "/about", weight: 3 },
+            { name: "文章", url: `/${postsBasePath}`, weight: 1 },
+            { name: "归档", url: "/archive", weight: 2 },
+            { name: "标签", url: "/tags", weight: 3 },
+            { name: "关于", url: "/about", weight: 4 },
         ],
         connect: [
             { name: "GitHub", url: social.github, weight: 1 },
@@ -110,7 +116,7 @@ export const siteConfig = {
             name: { zh: "文章", en: "Posts" },
         },
         series: {
-            // 还没有系列内容，先关掉；有内容后在 content/series/ 建目录再打开
+            // 还没有系列内容，先关掉；在 content/series/ 建目录后再打开
             enabled: false,
             name: { zh: "系列", en: "Series" },
         },
@@ -143,7 +149,7 @@ export const siteConfig = {
             { id: 'hero', enabled: true, weight: 1 },
             { id: 'featured-posts', enabled: true, weight: 2, maxItems: 4, order: 'date-desc' as const },
             { id: 'latest-posts', enabled: true, weight: 3, maxItems: 3 },
-            // 写了 Flow 之后把 enabled 改成 true，首页就会出现「最新笔记」区
+            // 写了 Flow / 系列 / 书籍之后把 enabled 改成 true，首页就会出现对应分区
             { id: 'recent-flows', enabled: false, weight: 4, maxItems: 8 },
             { id: 'featured-series', enabled: false, weight: 5, maxItems: 6 },
             { id: 'featured-books', enabled: false, weight: 6, maxItems: 4 },

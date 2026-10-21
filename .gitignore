@@ -12,7 +12,8 @@
 /.next/
 /out/
 /build
-/.cache/          # pagefind 开发缓存
+/.cache/
+# 注：pagefind 开发缓存
 /.vercel
 
 # ── amytis 构建时生成的资源 ───────────────────────────────────────────────
