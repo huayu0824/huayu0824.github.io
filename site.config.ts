@@ -57,18 +57,25 @@ export const siteConfig = {
 
     // ── 导航 ──────────────────────────────────────────────────────────────────
     // ─────────────────────────────────────────────────────────────────────────
-    // 导航只放「已经有内容」的入口。笔记 / 系列 / 书籍 / Flow / 图谱 这几项
-    // 在 content/notes、content/series、content/books、content/flows 建目录、
-    // 并把下面的 features 开关打开之后，再逐项加回来——否则访客点进去是
-    // 「共 0 条」的空页。
+    // 这几项的可见性由 amytis 按 features 开关自动过滤
+    // （src/lib/nav.ts 的 FEATURE_URLS），开关关掉时导航里就不出现，
+    // 所以这里直接把入口都列上，不用再手动摘来摘去。
+    //
+    // 系列 / 书籍 在有内容之后会自动变成下拉菜单
+    // （导航栏读 siteConfig.nav 里 /series、/books 两项的 dropdown）。
     // ─────────────────────────────────────────────────────────────────────────
     nav: [
         { name: "文章", url: `/${postsBasePath}`, weight: 1 },
-        { name: "关于", url: "/about", weight: 2 },
-        { name: "更多", url: "", weight: 3, children: [
+        { name: "随笔", url: "/flows", weight: 2 },
+        { name: "笔记", url: "/notes", weight: 3 },
+        { name: "系列", url: "/series", weight: 4 },
+        { name: "书籍", url: "/books", weight: 5 },
+        { name: "关于", url: "/about", weight: 6 },
+        { name: "更多", url: "", weight: 7, children: [
             { name: "归档", url: "/archive" },
             { name: "标签", url: "/tags", dividerBefore: true },
             { name: "友链", url: "/links" },
+            { name: "图谱", url: "/graph", dividerBefore: true },
         ]},
     ] as NavItem[],
 
@@ -76,9 +83,13 @@ export const siteConfig = {
     footer: {
         explore: [
             { name: "文章", url: `/${postsBasePath}`, weight: 1 },
-            { name: "归档", url: "/archive", weight: 2 },
-            { name: "标签", url: "/tags", weight: 3 },
-            { name: "关于", url: "/about", weight: 4 },
+            { name: "随笔", url: "/flows", weight: 2 },
+            { name: "笔记", url: "/notes", weight: 3 },
+            { name: "系列", url: "/series", weight: 4 },
+            { name: "书籍", url: "/books", weight: 5 },
+            { name: "归档", url: "/archive", weight: 6 },
+            { name: "标签", url: "/tags", weight: 7 },
+            { name: "关于", url: "/about", weight: 8 },
         ],
         connect: [
             { name: "GitHub", url: social.github, weight: 1 },
@@ -116,17 +127,22 @@ export const siteConfig = {
             name: { zh: "文章", en: "Posts" },
         },
         series: {
-            // 还没有系列内容，先关掉；在 content/series/ 建目录后再打开
-            enabled: false,
+            // 开关打开后 /series/ 才是真正的列表页（关着的时候是 404），
+            // 首页「精选系列」也才会出现。
+            // 想让某个系列出现在首页，系列索引文件里要写 featured: true。
+            enabled: true,
             name: { zh: "系列", en: "Series" },
         },
         books: {
-            enabled: false,
+            // 同上：/books/ 在开关关着时是 404。
+            // 书籍索引需要 title + date + chapters，还要 featured: true 才进首页。
+            enabled: true,
             name: { zh: "书籍", en: "Books" },
         },
         flow: {
             enabled: true,
-            name: { zh: "Flow", en: "Flow" },
+            // 导航里 /flows 这一项的文案取自这里
+            name: { zh: "随笔", en: "Flow" },
         },
     },
 
@@ -150,9 +166,9 @@ export const siteConfig = {
             { id: 'featured-posts', enabled: true, weight: 2, maxItems: 4, order: 'date-desc' as const },
             { id: 'latest-posts', enabled: true, weight: 3, maxItems: 3 },
             // 写了 Flow / 系列 / 书籍之后把 enabled 改成 true，首页就会出现对应分区
-            { id: 'recent-flows', enabled: false, weight: 4, maxItems: 8 },
-            { id: 'featured-series', enabled: false, weight: 5, maxItems: 6 },
-            { id: 'featured-books', enabled: false, weight: 6, maxItems: 4 },
+            { id: 'recent-flows', enabled: true, weight: 4, maxItems: 8 },
+            { id: 'featured-series', enabled: true, weight: 5, maxItems: 6 },
+            { id: 'featured-books', enabled: true, weight: 6, maxItems: 4 },
         ],
     },
 
